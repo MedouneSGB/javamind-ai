@@ -1,0 +1,185 @@
+@import "tailwindcss";
+
+/* ─── JavaMind AI — Claude Color Palette ─── */
+:root {
+  --color-bg:           #0d0d0d;
+  --color-bg-2:         #111110;
+  --color-surface:      #2a2928;
+  --color-surface-2:    #1e1d1c;
+  --color-surface-3:    #252422;
+  --color-accent:       #d4a574;
+  --color-accent-2:     #c8b89a;
+  --color-accent-hover: #e0b885;
+  --color-text:         #f5f0e8;
+  --color-text-muted:   #a09880;
+  --color-text-dim:     #6b6456;
+  --color-success:      #4a9b6f;
+  --color-error:        #c0392b;
+  --color-warning:      #d4943a;
+  --color-info:         #5b8db8;
+  --color-border:       #3a3630;
+  --color-border-2:     #2e2c28;
+  --color-selection:    rgba(212, 165, 116, 0.2);
+
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: dark;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* ─── Scrollbars ─── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-dim);
+}
+
+/* ─── Selection ─── */
+::selection {
+  background: var(--color-selection);
+}
+
+/* ─── Resizable panels ─── */
+[data-panel-group] {
+  height: 100%;
+  width: 100%;
+}
+[data-resize-handle] {
+  background: var(--color-border-2);
+  transition: background 0.15s;
+}
+[data-resize-handle]:hover,
+[data-resize-handle][data-resize-handle-active] {
+  background: var(--color-accent);
+}
+[data-resize-handle-orientation="horizontal"] {
+  width: 3px;
+  cursor: col-resize;
+}
+[data-resize-handle-orientation="vertical"] {
+  height: 3px;
+  cursor: row-resize;
+}
+
+/* ─── Monaco editor container ─── */
+.monaco-editor-container {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ─── Animations ─── */
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.cursor-blink::after {
+  content: '▊';
+  color: var(--color-accent);
+  animation: blink 1s infinite;
+}
+
+.fade-in {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.animate-pulse-slow {
+  animation: pulse 2s infinite;
+}
+
+/* ─── Xterm terminal ─── */
+.xterm-container {
+  width: 100%;
+  height: 100%;
+  padding: 8px;
+}
+.xterm-container .xterm {
+  height: 100%;
+}
+
+/* ─── AI streaming text ─── */
+.streaming-content {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--color-text);
+}
+.streaming-content h1, .streaming-content h2, .streaming-content h3 {
+  color: var(--color-accent);
+  margin: 12px 0 6px;
+  font-weight: 600;
+}
+.streaming-content p { margin-bottom: 8px; }
+.streaming-content ul, .streaming-content ol {
+  margin: 6px 0 8px 16px;
+}
+.streaming-content li { margin-bottom: 4px; }
+.streaming-content code {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-family: 'Cascadia Code', 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 12px;
+  color: var(--color-accent-2);
+}
+.streaming-content pre {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 12px;
+  overflow-x: auto;
+  margin: 8px 0;
+}
+.streaming-content pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 12.5px;
+  color: var(--color-text);
+}
+.streaming-content strong { color: var(--color-accent-2); }
+.streaming-content blockquote {
+  border-left: 3px solid var(--color-accent);
+  padding-left: 12px;
+  color: var(--color-text-muted);
+  margin: 8px 0;
+}
