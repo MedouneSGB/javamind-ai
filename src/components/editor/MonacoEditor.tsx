@@ -1,6 +1,7 @@
-import { useRef } from 'react'
+import { useRef, useEffect } from 'react'
 import Editor, { loader, type Monaco } from '@monaco-editor/react'
 import type * as monaco from 'monaco-editor'
+import { useThemeStore } from '../../store/themeStore'
 
 // Load Monaco from node_modules
 loader.config({
@@ -61,6 +62,58 @@ const CLAUDE_DARK_THEME: monaco.editor.IStandaloneThemeData = {
   },
 }
 
+const CLAUDE_LIGHT_THEME: monaco.editor.IStandaloneThemeData = {
+  base: 'vs',
+  inherit: true,
+  rules: [
+    { token: 'comment', foreground: '8a7a6a', fontStyle: 'italic' },
+    { token: 'keyword', foreground: 'b5763a' },
+    { token: 'keyword.control', foreground: '9c6a30' },
+    { token: 'string', foreground: '4a7c4e' },
+    { token: 'number', foreground: '5a7a5a' },
+    { token: 'type', foreground: '7a5c1e' },
+    { token: 'class', foreground: '7a5c1e', fontStyle: 'bold' },
+    { token: 'function', foreground: '3a5f8a' },
+    { token: 'variable', foreground: '1a1714' },
+    { token: 'operator', foreground: '6b5c4e' },
+    { token: 'delimiter', foreground: '8a7a6a' },
+    { token: 'annotation', foreground: 'b5763a' },
+  ],
+  colors: {
+    'editor.background': '#faf8f5',
+    'editor.foreground': '#1a1714',
+    'editor.lineHighlightBackground': '#f2ede6',
+    'editor.selectionBackground': '#b5763a33',
+    'editor.inactiveSelectionBackground': '#b5763a22',
+    'editorLineNumber.foreground': '#c4b8a8',
+    'editorLineNumber.activeForeground': '#6b5c4e',
+    'editorCursor.foreground': '#b5763a',
+    'editorWhitespace.foreground': '#ddd4c5',
+    'editorIndentGuide.background': '#ddd4c5',
+    'editorIndentGuide.activeBackground': '#c4b8a8',
+    'editorGutter.background': '#faf8f5',
+    'scrollbar.shadow': '#00000000',
+    'scrollbarSlider.background': '#c4b8a866',
+    'scrollbarSlider.hoverBackground': '#c4b8a8aa',
+    'scrollbarSlider.activeBackground': '#6b5c4eaa',
+    'editorWidget.background': '#ffffff',
+    'editorSuggestWidget.background': '#ffffff',
+    'editorSuggestWidget.border': '#d4c8b8',
+    'editorSuggestWidget.selectedBackground': '#f2ede6',
+    'editorHoverWidget.background': '#ffffff',
+    'editorHoverWidget.border': '#d4c8b8',
+    'input.background': '#f2ede6',
+    'input.foreground': '#1a1714',
+    'input.border': '#d4c8b8',
+    'focusBorder': '#b5763a',
+    'contrastBorder': '#d4c8b8',
+    'badge.background': '#b5763a33',
+    'badge.foreground': '#b5763a',
+    'list.activeSelectionBackground': '#f2ede6',
+    'list.hoverBackground': '#faf8f5',
+  },
+}
+
 interface MonacoEditorProps {
   tabId: string
   content: string
@@ -71,14 +124,23 @@ interface MonacoEditorProps {
 export function MonacoEditor({ tabId, content, language, onChange }: MonacoEditorProps) {
   const monacoRef = useRef<Monaco | null>(null)
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null)
+  const { theme } = useThemeStore()
+
+  // Switch Monaco theme when app theme changes
+  useEffect(() => {
+    if (monacoRef.current) {
+      monacoRef.current.editor.setTheme(theme === 'light' ? 'claude-light' : 'claude-dark')
+    }
+  }, [theme])
 
   const handleMount = (editor: monaco.editor.IStandaloneCodeEditor, monacoInstance: Monaco) => {
     monacoRef.current = monacoInstance
     editorRef.current = editor
 
-    // Register theme
+    // Register themes
     monacoInstance.editor.defineTheme('claude-dark', CLAUDE_DARK_THEME)
-    monacoInstance.editor.setTheme('claude-dark')
+    monacoInstance.editor.defineTheme('claude-light', CLAUDE_LIGHT_THEME)
+    monacoInstance.editor.setTheme(theme === 'light' ? 'claude-light' : 'claude-dark')
 
     // Java-specific settings
     if (language === 'java') {

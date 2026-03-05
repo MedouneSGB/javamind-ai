@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* ─── JavaMind AI — Claude Color Palette ─── */
+/* ─── JavaMind AI — Dark Theme (default) ─── */
 :root {
   --color-bg:           #0d0d0d;
   --color-bg-2:         #111110;
@@ -19,7 +19,7 @@
   --color-info:         #5b8db8;
   --color-border:       #3a3630;
   --color-border-2:     #2e2c28;
-  --color-selection:    rgba(212, 165, 116, 0.2);
+  --color-selection:    rgba(212, 165, 116, 0.25);
 
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   font-size: 14px;
@@ -28,6 +28,29 @@
   color-scheme: dark;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Light Theme ─── */
+:root[data-theme="light"] {
+  --color-bg:           #faf8f5;
+  --color-bg-2:         #f2ede6;
+  --color-surface:      #ffffff;
+  --color-surface-2:    #f7f3ee;
+  --color-surface-3:    #ede8e0;
+  --color-accent:       #b5763a;
+  --color-accent-2:     #8a5c2e;
+  --color-accent-hover: #c8864a;
+  --color-text:         #1a1714;
+  --color-text-muted:   #5c4f3a;
+  --color-text-dim:     #9c8c78;
+  --color-success:      #2d7a4f;
+  --color-error:        #b02020;
+  --color-warning:      #b8720a;
+  --color-info:         #2a6090;
+  --color-border:       #d4c8b8;
+  --color-border-2:     #e8e0d4;
+  --color-selection:    rgba(181, 118, 58, 0.18);
+  color-scheme: light;
 }
 
 * {

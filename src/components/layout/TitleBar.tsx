@@ -1,6 +1,10 @@
 import { ipc } from '../../lib/ipc'
+import { useThemeStore } from '../../store/themeStore'
 
 export function TitleBar() {
+  const { theme, toggleTheme } = useThemeStore()
+  const isDark = theme === 'dark'
+
   return (
     <div
       style={{
@@ -23,7 +27,7 @@ export function TitleBar() {
           background: 'var(--color-accent)',
           borderRadius: '4px',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '10px', fontWeight: 700, color: '#0d0d0d',
+          fontSize: '10px', fontWeight: 700, color: isDark ? '#0d0d0d' : '#ffffff',
         }}>J</div>
         <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text)', letterSpacing: '0.3px' }}>
           JavaMind AI
@@ -33,8 +37,38 @@ export function TitleBar() {
         </span>
       </div>
 
-      {/* Window controls */}
-      <div style={{ display: 'flex', WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+      {/* Right controls */}
+      <div style={{ display: 'flex', alignItems: 'center', WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+        {/* Theme toggle */}
+        <button
+          onClick={toggleTheme}
+          title={isDark ? 'Switch to Light theme' : 'Switch to Dark theme'}
+          style={{
+            width: '46px',
+            height: '36px',
+            background: 'transparent',
+            border: 'none',
+            color: 'var(--color-text-muted)',
+            fontSize: '14px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'background 0.1s, color 0.1s',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'var(--color-surface)'
+            e.currentTarget.style.color = 'var(--color-accent)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'transparent'
+            e.currentTarget.style.color = 'var(--color-text-muted)'
+          }}
+        >
+          {isDark ? '☀' : '☾'}
+        </button>
+
+        {/* Window controls */}
         <WinBtn onClick={() => ipc.window.minimize()} title="Minimize">─</WinBtn>
         <WinBtn onClick={() => ipc.window.maximize()} title="Maximize">□</WinBtn>
         <WinBtn onClick={() => ipc.window.close()} title="Close" isClose>✕</WinBtn>
