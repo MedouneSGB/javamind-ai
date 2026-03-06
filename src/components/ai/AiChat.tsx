@@ -16,6 +16,8 @@ export function AiChat() {
   const [input, setInput] = useState('')
   const [models, setModels] = useState<{ id: string; label: string }[]>([])
   const [loadingModels, setLoadingModels] = useState(false)
+  const [modelStatus, setModelStatus] = useState<Record<string, boolean | null>>({})
+  const [testingModels, setTestingModels] = useState(false)
   const { stream, getContext } = useAiStream()
   const { chatHistory, addMessage, isStreaming, currentStreamContent, clearChatHistory, aiProvider, setAiProvider, aiModel, setAiModel } = useAiStore()
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -29,13 +31,31 @@ export function AiChat() {
     // Show defaults immediately, then load from API
     setModels(DEFAULT_MODELS[aiProvider])
     setAiModel(DEFAULT_MODELS[aiProvider][0].id)
+    setModelStatus({})
     setLoadingModels(true)
     ipc.ai.getModels(aiProvider).then((result) => {
-      if (result && result.length > 0) {
-        setModels(result)
-        setAiModel(result[0].id)
-      }
+      const list = result && result.length > 0 ? result : DEFAULT_MODELS[aiProvider]
+      setModels(list)
+      setAiModel(list[0].id)
       setLoadingModels(false)
+
+      // After list is loaded, silently test each model in parallel
+      setTestingModels(true)
+      // Mark all as null (pending) first
+      const pending: Record<string, boolean | null> = {}
+      list.forEach(m => { pending[m.id] = null })
+      setModelStatus(pending)
+
+      ipc.ai.testModels(aiProvider, list.map(m => m.id)).then((results) => {
+        setModelStatus(results)
+        setTestingModels(false)
+        // If current model failed, switch to first available
+        const currentOk = results[list[0].id]
+        if (currentOk === false) {
+          const firstOk = list.find(m => results[m.id] === true)
+          if (firstOk) setAiModel(firstOk.id)
+        }
+      }).catch(() => setTestingModels(false))
     }).catch(() => setLoadingModels(false))
   }, [aiProvider])
 
@@ -166,6 +186,7 @@ export function AiChat() {
             value={aiModel}
             onChange={(e) => setAiModel(e.target.value)}
             disabled={loadingModels || isStreaming}
+            title={testingModels ? 'Vérification des modèles en cours…' : 'Choisir un modèle'}
             style={{
               flex: 1,
               background: 'var(--color-surface)',
@@ -180,10 +201,25 @@ export function AiChat() {
               minWidth: 0,
             }}
           >
-            {models.map(m => (
-              <option key={m.id} value={m.id}>{m.label}</option>
-            ))}
+            {models.map(m => {
+              const status = modelStatus[m.id]
+              const icon = status === null ? '○' : status === true ? '✓' : '✗'
+              const label = `${icon} ${m.label}`
+              return (
+                <option key={m.id} value={m.id} disabled={status === false}>
+                  {label}
+                </option>
+              )
+            })}
           </select>
+          {/* Status indicator dot */}
+          {testingModels && (
+            <div title="Test des modèles en cours…" style={{
+              width: '6px', height: '6px', borderRadius: '50%',
+              background: 'var(--color-accent)', flexShrink: 0,
+              animation: 'pulse 1s infinite',
+            }} />
+          )}
         </div>
 
         <div style={{

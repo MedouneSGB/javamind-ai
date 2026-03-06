@@ -510,6 +510,95 @@ ipcMain.handle('ai:getModels', async (_, provider: 'anthropic' | 'gemini' | 'ope
   }
 })
 
+// Test model availability by sending a minimal 1-token request
+ipcMain.handle('ai:testModels', async (_, payload: { provider: 'anthropic' | 'gemini' | 'openai'; models: string[] }) => {
+  const { provider, models } = payload
+  const results: Record<string, boolean> = {}
+
+  const testOne = async (modelId: string): Promise<boolean> => {
+    try {
+      if (provider === 'gemini') {
+        const apiKey = process.env.GEMINI_API_KEY
+        if (!apiKey) return false
+        const https = require('https')
+        const body = JSON.stringify({ contents: [{ parts: [{ text: 'Hi' }] }], generationConfig: { maxOutputTokens: 1 } })
+        const ok: boolean = await new Promise((resolve) => {
+          const req = https.request({
+            hostname: 'generativelanguage.googleapis.com',
+            path: `/v1beta/models/${modelId}:generateContent?key=${apiKey}`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+          }, (res: any) => {
+            res.resume()
+            resolve(res.statusCode >= 200 && res.statusCode < 300)
+          })
+          req.on('error', () => resolve(false))
+          req.write(body)
+          req.end()
+        })
+        return ok
+      } else if (provider === 'openai') {
+        const apiKey = process.env.OPENAI_API_KEY
+        if (!apiKey) return false
+        const https = require('https')
+        const body = JSON.stringify({ model: modelId, messages: [{ role: 'user', content: 'Hi' }], max_tokens: 1 })
+        const ok: boolean = await new Promise((resolve) => {
+          const req = https.request({
+            hostname: 'api.openai.com',
+            path: '/v1/chat/completions',
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}`, 'Content-Length': Buffer.byteLength(body) },
+          }, (res: any) => {
+            res.resume()
+            resolve(res.statusCode >= 200 && res.statusCode < 300)
+          })
+          req.on('error', () => resolve(false))
+          req.write(body)
+          req.end()
+        })
+        return ok
+      } else {
+        // Anthropic
+        const apiKey = process.env.ANTHROPIC_API_KEY
+        if (!apiKey) return false
+        const https = require('https')
+        const body = JSON.stringify({ model: modelId, max_tokens: 1, messages: [{ role: 'user', content: 'Hi' }] })
+        const ok: boolean = await new Promise((resolve) => {
+          const req = https.request({
+            hostname: 'api.anthropic.com',
+            path: '/v1/messages',
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': apiKey,
+              'anthropic-version': '2023-06-01',
+              'Content-Length': Buffer.byteLength(body),
+            },
+          }, (res: any) => {
+            res.resume()
+            resolve(res.statusCode >= 200 && res.statusCode < 300)
+          })
+          req.on('error', () => resolve(false))
+          req.write(body)
+          req.end()
+        })
+        return ok
+      }
+    } catch {
+      return false
+    }
+  }
+
+  // Test all models in parallel
+  await Promise.all(
+    models.map(async (id) => {
+      results[id] = await testOne(id)
+    })
+  )
+
+  return results
+})
+
 // API key management (using safeStorage for encryption)
 ipcMain.handle('settings:getApiKey', async () => {
   try {
