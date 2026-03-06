@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAiStream } from '../../hooks/useAiStream'
 import { useAiStore } from '../../store/aiStore'
+import { MessageCircle, Send, CheckCircle2 } from 'lucide-react'
 import { SYSTEM_PROMPTS } from '../../lib/prompt-templates'
 import { StreamingText } from './StreamingText'
 import type { AiMessage } from '../../types/ai.types'
@@ -66,7 +67,7 @@ export function RubberDuck() {
     return (
       <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <div style={{ textAlign: 'center', padding: '12px 0' }}>
-          <div style={{ fontSize: '48px', marginBottom: '8px' }}>🦆</div>
+          <div style={{ marginBottom: '8px', color: 'var(--color-accent)' }}><MessageCircle size={48}/></div>
           <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-accent)' }}>Rubber Duck Debugger</div>
           <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', lineHeight: 1.7, marginTop: '6px' }}>
             Describe your bug. The duck will ask you<br />
@@ -98,7 +99,7 @@ export function RubberDuck() {
               color: msg.role === 'user' ? 'var(--color-accent)' : 'var(--color-text-dim)',
               marginBottom: '4px',
             }}>
-              {msg.role === 'user' ? 'YOU' : '🦆 DUCK'}
+              {msg.role === 'user' ? 'YOU' : 'DUCK'}
             </div>
             {msg.role === 'user' ? (
               <div style={{ color: 'var(--color-text)', whiteSpace: 'pre-wrap' }}>{msg.content}</div>
@@ -116,7 +117,7 @@ export function RubberDuck() {
             borderRadius: '8px',
           }}>
             <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--color-text-dim)', marginBottom: '4px' }}>
-              🦆 DUCK
+              <MessageCircle size={10}/> DUCK
             </div>
             <StreamingText content={currentStreamContent} isStreaming />
           </div>
@@ -155,7 +156,7 @@ export function RubberDuck() {
               fontSize: '12px',
             }}
           >
-            →
+            <Send size={12}/>
           </button>
         </div>
         <button
@@ -165,7 +166,7 @@ export function RubberDuck() {
             color: 'var(--color-text-dim)', fontSize: '11px', cursor: 'pointer',
           }}
         >
-          🎉 I found the bug! End session
+          <CheckCircle2 size={12}/> I found the bug! End session
         </button>
       </div>
     </div>
@@ -208,7 +209,7 @@ function StartForm({ onStart }: { onStart: (desc: string) => void }) {
           opacity: desc.trim() ? 1 : 0.5,
         }}
       >
-        🦆 Talk to the Duck
+        <MessageCircle size={13}/> Talk to the Duck
       </button>
     </div>
   )

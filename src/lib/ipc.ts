@@ -57,6 +57,12 @@ export const ipc = {
       window.electronAPI.on('ai:stream-done', () => cb()),
     onError: (cb: (error: string) => void) =>
       window.electronAPI.on('ai:stream-error', (error) => cb(error as string)),
+    getModels: (provider: 'anthropic' | 'gemini' | 'openai'): Promise<{ id: string; label: string }[]> =>
+      window.electronAPI.invoke('ai:getModels', provider) as Promise<{ id: string; label: string }[]>,
+    testModels: (provider: 'anthropic' | 'gemini' | 'openai', models: string[]): Promise<Record<string, boolean>> =>
+      window.electronAPI.invoke('ai:testModels', { provider, models }) as Promise<Record<string, boolean>>,
+    getProviders: (): Promise<{ anthropic: boolean; gemini: boolean; openai: boolean }> =>
+      window.electronAPI.invoke('ai:getProviders') as Promise<{ anthropic: boolean; gemini: boolean; openai: boolean }>,
   },
 
   settings: {

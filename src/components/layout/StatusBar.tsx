@@ -1,4 +1,5 @@
 import { useProjectStore } from '../../store/projectStore'
+import { FolderOpen, Zap, Play, XCircle, CheckCircle2, Circle, Flame, Sparkles } from 'lucide-react'
 import { useLearningStore } from '../../store/learningStore'
 import { useAiStore } from '../../store/aiStore'
 
@@ -27,7 +28,7 @@ export function StatusBar() {
         {/* Project */}
         {projectName && (
           <StatusItem color="var(--color-accent)">
-            📁 {projectName}
+            <FolderOpen size={11}/> {projectName}
           </StatusItem>
         )}
 
@@ -35,27 +36,27 @@ export function StatusBar() {
         <StatusItem>Java 21 LTS</StatusItem>
 
         {/* Run status */}
-        {isCompiling && <StatusItem color="var(--color-warning)" pulse>⚡ Compiling...</StatusItem>}
-        {isRunning && <StatusItem color="var(--color-success)" pulse>▶ Running</StatusItem>}
+        {isCompiling && <StatusItem color="var(--color-warning)" pulse><Zap size={11}/> Compiling...</StatusItem>}
+        {isRunning && <StatusItem color="var(--color-success)" pulse><Play size={11} fill='currentColor'/> Running</StatusItem>}
         {errors.length > 0 && !isCompiling && (
-          <StatusItem color="var(--color-error)">✗ {errors.length} error(s)</StatusItem>
+          <StatusItem color="var(--color-error)"><XCircle size={11}/> {errors.length} error(s)</StatusItem>
         )}
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         {/* AI streaming */}
         {isStreaming && (
-          <StatusItem color="var(--color-accent)" pulse>✦ AI thinking...</StatusItem>
+          <StatusItem color="var(--color-accent)" pulse><Sparkles size={11}/> AI thinking...</StatusItem>
         )}
 
         {/* Daily kata */}
         <StatusItem color={kataCompletedToday ? 'var(--color-success)' : 'var(--color-text-dim)'}>
-          {kataCompletedToday ? '✓' : '○'} Daily Kata
+          {kataCompletedToday ? <CheckCircle2 size={11}/> : <Circle size={11}/>} Daily Kata
         </StatusItem>
 
         {/* Streak */}
         {dailyStreak > 0 && (
-          <StatusItem color="var(--color-warning)">🔥 {dailyStreak} day streak</StatusItem>
+          <StatusItem color="var(--color-warning)"><Flame size={11}/> {dailyStreak} day streak</StatusItem>
         )}
 
         {/* Progress */}

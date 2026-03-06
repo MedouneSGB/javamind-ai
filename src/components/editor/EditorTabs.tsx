@@ -1,5 +1,6 @@
 import { useEditorStore } from '../../store/editorStore'
 import type { EditorTab } from '../../types/editor.types'
+import { Coffee, FileJson, FileCode2, FileText, File, X } from 'lucide-react'
 
 export function EditorTabs() {
   const { tabs, activeTabId, setActiveTab, closeTab, saveFile } = useEditorStore()
@@ -42,11 +43,11 @@ function Tab({ tab, isActive, onSelect, onClose, onSave }: {
   onSave: () => void
 }) {
   const getFileIcon = (name: string) => {
-    if (name.endsWith('.java')) return '☕'
-    if (name.endsWith('.json')) return '{}'
-    if (name.endsWith('.xml')) return '<>'
-    if (name.endsWith('.md')) return '📝'
-    return '📄'
+    if (name.endsWith('.java')) return <Coffee size={11}/>
+    if (name.endsWith('.json')) return <FileJson size={11}/>
+    if (name.endsWith('.xml')) return <FileCode2 size={11}/>
+    if (name.endsWith('.md')) return <FileText size={11}/>
+    return <File size={11}/>
   }
 
   return (
@@ -88,7 +89,7 @@ function Tab({ tab, isActive, onSelect, onClose, onSave }: {
         }
       }}
     >
-      <span style={{ fontSize: '11px' }}>{getFileIcon(tab.name)}</span>
+      <span style={{ display:'flex', alignItems:'center' }}>{getFileIcon(tab.name)}</span>
       <span style={{
         overflow: 'hidden',
         textOverflow: 'ellipsis',
@@ -135,7 +136,7 @@ function Tab({ tab, isActive, onSelect, onClose, onSave }: {
           e.currentTarget.style.color = 'var(--color-text-dim)'
         }}
       >
-        ✕
+        <X size={10}/>
       </button>
     </div>
   )

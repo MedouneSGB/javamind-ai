@@ -1,5 +1,6 @@
 import { ipc } from '../../lib/ipc'
 import { useThemeStore } from '../../store/themeStore'
+import { RotateCcw, Sun, Moon, Minus, Square, X } from 'lucide-react'
 
 export function TitleBar() {
   const { theme, toggleTheme } = useThemeStore()
@@ -39,6 +40,21 @@ export function TitleBar() {
 
       {/* Right controls */}
       <div style={{ display: 'flex', alignItems: 'center', WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+        {/* Refresh (dev) */}
+        <button
+          onClick={() => window.location.reload()}
+          title="Reload app (Ctrl+R)"
+          style={{
+            width: '46px', height: '36px',
+            background: 'transparent', border: 'none',
+            color: 'var(--color-text-muted)', fontSize: '15px',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'background 0.1s, color 0.1s',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-surface)'; e.currentTarget.style.color = 'var(--color-accent)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-text-muted)' }}
+        ><RotateCcw size={13}/></button>
+
         {/* Theme toggle */}
         <button
           onClick={toggleTheme}
@@ -65,13 +81,13 @@ export function TitleBar() {
             e.currentTarget.style.color = 'var(--color-text-muted)'
           }}
         >
-          {isDark ? '☀' : '☾'}
+          {isDark ? <Sun size={14}/> : <Moon size={14}/>}
         </button>
 
         {/* Window controls */}
-        <WinBtn onClick={() => ipc.window.minimize()} title="Minimize">─</WinBtn>
-        <WinBtn onClick={() => ipc.window.maximize()} title="Maximize">□</WinBtn>
-        <WinBtn onClick={() => ipc.window.close()} title="Close" isClose>✕</WinBtn>
+        <WinBtn onClick={() => ipc.window.minimize()} title="Minimize"><Minus size={12}/></WinBtn>
+        <WinBtn onClick={() => ipc.window.maximize()} title="Maximize"><Square size={11}/></WinBtn>
+        <WinBtn onClick={() => ipc.window.close()} title="Close" isClose><X size={12}/></WinBtn>
       </div>
     </div>
   )

@@ -48,7 +48,6 @@ export function ChallengeMode() {
     const response = await stream({
       systemPrompt,
       messages: [{ role: 'user', content: 'Generate a challenge.' }],
-      model: 'claude-opus-4-6',
     })
 
     try {

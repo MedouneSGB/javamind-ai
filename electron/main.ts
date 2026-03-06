@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, shell, globalShortcut } from 'electron'
 import * as path from 'path'
 import * as fs from 'fs'
 import * as fsp from 'fs/promises'
@@ -7,7 +7,7 @@ import { spawn, ChildProcess } from 'child_process'
 // Load env variables in development
 if (process.env.ELECTRON_DEV) {
   try {
-    require('dotenv').config()
+    require('dotenv').config({ override: true })
   } catch {}
 }
 
@@ -32,7 +32,8 @@ function createWindow(): void {
   })
 
   if (process.env.ELECTRON_DEV) {
-    mainWindow.loadURL('http://localhost:5173')
+    const devPort = process.env.VITE_DEV_PORT || '5173'
+    mainWindow.loadURL(`http://localhost:${devPort}`)
     mainWindow.webContents.openDevTools()
   } else {
     mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'))
@@ -43,9 +44,20 @@ function createWindow(): void {
   })
 }
 
-app.whenReady().then(createWindow)
+app.whenReady().then(() => {
+  createWindow()
+  if (process.env.ELECTRON_DEV) {
+    globalShortcut.register('CommandOrControl+R', () => {
+      mainWindow?.webContents.reload()
+    })
+    globalShortcut.register('F5', () => {
+      mainWindow?.webContents.reload()
+    })
+  }
+})
 
 app.on('window-all-closed', () => {
+  globalShortcut.unregisterAll()
   if (process.platform !== 'darwin') app.quit()
 })
 
@@ -155,18 +167,33 @@ interface FileTreeNode {
 // Java runner IPC
 // ─────────────────────────────────────────────────────────
 ipcMain.handle('java:compile', async (event, { projectPath }: { projectPath: string }) => {
-  const srcDir = path.join(projectPath, 'src')
   const outDir = path.join(projectPath, 'out')
 
   // Ensure out dir exists
   if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true })
 
-  // Collect all .java files
-  const javaFiles = collectJavaFiles(srcDir)
-  if (javaFiles.length === 0) return { success: false, errors: [{ message: 'No .java files found in src/' }] }
+  // Collect ALL .java files recursively, excluding out/ dir (by absolute path)
+  const outDirNorm = path.normalize(outDir) + path.sep
+  const allJavaFiles = collectJavaFiles(projectPath).filter(f => {
+    const norm = path.normalize(f)
+    // Exclude anything inside the out/ directory or hidden dirs
+    if (norm.startsWith(outDirNorm)) return false
+    const rel = path.relative(projectPath, norm)
+    if (rel.startsWith('.')) return false
+    return true
+  })
+
+  if (allJavaFiles.length === 0) {
+    return { success: false, errors: [{ message: 'No .java files found in project. Create a .java file first.' }] }
+  }
+
+  // Use src/ as classpath root if it exists, otherwise project root
+  const srcDir = fs.existsSync(path.join(projectPath, 'src'))
+    ? path.join(projectPath, 'src')
+    : projectPath
 
   return new Promise((resolve) => {
-    const proc = spawn('javac', ['-d', outDir, '-cp', srcDir, ...javaFiles], { cwd: projectPath })
+    const proc = spawn('javac', ['-d', outDir, '-cp', srcDir, ...allJavaFiles], { cwd: projectPath })
     let stderr = ''
     proc.stderr.on('data', (d: Buffer) => { stderr += d.toString() })
     proc.on('close', (code: number) => {
@@ -261,41 +288,331 @@ function parseJavacErrors(stderr: string): JavaError[] {
 }
 
 // ─────────────────────────────────────────────────────────
-// AI IPC — Anthropic streaming
+// AI IPC — Multi-provider streaming (Anthropic + Gemini)
 // ─────────────────────────────────────────────────────────
 ipcMain.handle('ai:stream', async (event, payload: {
   systemPrompt: string
   messages: Array<{ role: 'user' | 'assistant'; content: string }>
   model?: string
+  provider?: 'anthropic' | 'gemini' | 'openai'
 }) => {
-  const apiKey = process.env.ANTHROPIC_API_KEY
-  if (!apiKey) {
-    event.sender.send('ai:stream-error', 'ANTHROPIC_API_KEY not configured. Please set it in Settings.')
-    event.sender.send('ai:stream-done')
-    return
-  }
+  const provider = payload.provider || 'anthropic'
 
-  try {
-    const Anthropic = require('@anthropic-ai/sdk')
-    const client = new Anthropic.default({ apiKey })
-
-    const stream = await client.messages.stream({
-      model: payload.model || 'claude-sonnet-4-6',
-      max_tokens: 4096,
-      system: payload.systemPrompt,
-      messages: payload.messages,
-    })
-
-    for await (const chunk of stream) {
-      if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
-        event.sender.send('ai:stream-chunk', chunk.delta.text)
-      }
+  if (provider === 'gemini') {
+    const apiKey = process.env.GEMINI_API_KEY
+    if (!apiKey) {
+      event.sender.send('ai:stream-error', 'GEMINI_API_KEY not configured in .env')
+      event.sender.send('ai:stream-done')
+      return
     }
-  } catch (err: any) {
-    event.sender.send('ai:stream-error', err.message || 'AI request failed')
+    try {
+      const { GoogleGenerativeAI } = require('@google/generative-ai')
+      const genAI = new GoogleGenerativeAI(apiKey)
+      const geminiModel = genAI.getGenerativeModel({
+        model: (payload.model && !payload.model.startsWith('claude')) ? payload.model : 'gemini-2.0-flash',
+        systemInstruction: payload.systemPrompt,
+      })
+      const history = payload.messages.slice(0, -1).map((m: { role: string; content: string }) => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content }],
+      }))
+      const lastMessage = payload.messages[payload.messages.length - 1]
+      const chat = geminiModel.startChat({ history })
+      const result = await chat.sendMessageStream(lastMessage.content)
+      for await (const chunk of result.stream) {
+        const text = chunk.text()
+        if (text) event.sender.send('ai:stream-chunk', text)
+      }
+    } catch (err: any) {
+      event.sender.send('ai:stream-error', err.message || 'Gemini request failed')
+    }
+  } else if (provider === 'openai') {
+    const apiKey = process.env.OPENAI_API_KEY
+    if (!apiKey) {
+      event.sender.send('ai:stream-error', 'OPENAI_API_KEY not configured in .env')
+      event.sender.send('ai:stream-done')
+      return
+    }
+    try {
+      const OpenAI = require('openai')
+      const client = new OpenAI.default({ apiKey })
+      const model = payload.model || 'gpt-4o'
+      const isReasoning = model.startsWith('o1') || model.startsWith('o3')
+      // o1/o3 models: no system role, use max_completion_tokens
+      const messages = isReasoning
+        ? [
+            { role: 'developer' as const, content: payload.systemPrompt },
+            ...payload.messages,
+          ]
+        : [
+            { role: 'system' as const, content: payload.systemPrompt },
+            ...payload.messages,
+          ]
+      const requestParams: any = {
+        model,
+        messages,
+        stream: true,
+      }
+      if (isReasoning) {
+        requestParams.max_completion_tokens = 4096
+      } else {
+        requestParams.max_tokens = 4096
+      }
+      const stream = await client.chat.completions.create(requestParams)
+      for await (const chunk of stream) {
+        const text = chunk.choices[0]?.delta?.content
+        if (text) event.sender.send('ai:stream-chunk', text)
+      }
+    } catch (err: any) {
+      event.sender.send('ai:stream-error', err.message || 'OpenAI request failed')
+    }
+  } else {
+    // Anthropic
+    const apiKey = process.env.ANTHROPIC_API_KEY
+    if (!apiKey) {
+      event.sender.send('ai:stream-error', 'ANTHROPIC_API_KEY not configured in .env')
+      event.sender.send('ai:stream-done')
+      return
+    }
+    try {
+      const Anthropic = require('@anthropic-ai/sdk')
+      const client = new Anthropic.default({ apiKey })
+      const stream = await client.messages.stream({
+        model: payload.model || 'claude-sonnet-4-5',
+        max_tokens: 4096,
+        system: payload.systemPrompt,
+        messages: payload.messages,
+      })
+      for await (const chunk of stream) {
+        if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
+          event.sender.send('ai:stream-chunk', chunk.delta.text)
+        }
+      }
+    } catch (err: any) {
+      event.sender.send('ai:stream-error', err.message || 'Anthropic request failed')
+    }
   }
 
   event.sender.send('ai:stream-done')
+})
+
+// Return available providers + their models
+ipcMain.handle('ai:getProviders', async () => {
+  return {
+    anthropic: !!process.env.ANTHROPIC_API_KEY,
+    gemini: !!process.env.GEMINI_API_KEY,
+    openai: !!process.env.OPENAI_API_KEY,
+  }
+})
+
+ipcMain.handle('ai:getModels', async (_, provider: 'anthropic' | 'gemini' | 'openai') => {
+  try {
+    if (provider === 'gemini') {
+      const apiKey = process.env.GEMINI_API_KEY
+      if (!apiKey) return []
+      // Use Gemini REST API directly to list models (SDK v0.x doesn't expose listModels)
+      const https = require('https')
+      const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
+      const data: any = await new Promise((resolve, reject) => {
+        https.get(url, (res: any) => {
+          let body = ''
+          res.on('data', (chunk: any) => { body += chunk })
+          res.on('end', () => {
+            try { resolve(JSON.parse(body)) } catch (e) { reject(e) }
+          })
+        }).on('error', reject)
+      })
+      if (!data.models) {
+        console.error('[ai:getModels] Gemini API error:', JSON.stringify(data))
+        return []
+      }
+      return (data.models as any[])
+        .filter((m: any) => m.supportedGenerationMethods?.includes('generateContent'))
+        .map((m: any) => ({
+          id: m.name.replace('models/', ''),
+          label: m.displayName || m.name.replace('models/', ''),
+        }))
+        .filter((m: any) => m.id.startsWith('gemini'))
+        .sort((a: any, b: any) => {
+          // Sort: 2.5 first, then 2.0, then others
+          const rank = (id: string) => {
+            if (id.includes('2.5')) return 0
+            if (id.includes('2.0')) return 1
+            return 2
+          }
+          return rank(a.id) - rank(b.id) || a.label.localeCompare(b.label)
+        })
+    } else if (provider === 'openai') {
+      const apiKey = process.env.OPENAI_API_KEY
+      if (!apiKey) return []
+      // Fetch models dynamically from OpenAI REST API
+      const https = require('https')
+      const data: any = await new Promise((resolve, reject) => {
+        const options = {
+          hostname: 'api.openai.com',
+          path: '/v1/models',
+          headers: { Authorization: `Bearer ${apiKey}` },
+        }
+        https.get(options, (res: any) => {
+          let body = ''
+          res.on('data', (chunk: any) => { body += chunk })
+          res.on('end', () => {
+            try { resolve(JSON.parse(body)) } catch (e) { reject(e) }
+          })
+        }).on('error', reject)
+      })
+      if (!data.data) {
+        console.error('[ai:getModels] OpenAI API error:', JSON.stringify(data))
+        return []
+      }
+      // Keep only GPT and o-series models relevant for chat
+      const allowed = ['gpt-4o', 'gpt-4.1', 'gpt-4-turbo', 'gpt-3.5', 'o1', 'o3']
+      return (data.data as any[])
+        .filter((m: any) => allowed.some(prefix => m.id.startsWith(prefix)))
+        .map((m: any) => ({ id: m.id, label: m.id }))
+        .sort((a: any, b: any) => {
+          // Sort: o3 > o1 > gpt-4.1 > gpt-4o > gpt-4-turbo > gpt-3.5
+          const rank = (id: string) => {
+            if (id.startsWith('o3')) return 0
+            if (id.startsWith('o1')) return 1
+            if (id.startsWith('gpt-4.1')) return 2
+            if (id.startsWith('gpt-4o')) return 3
+            if (id.startsWith('gpt-4-turbo')) return 4
+            return 5
+          }
+          return rank(a.id) - rank(b.id) || a.id.localeCompare(b.id)
+        })
+    } else {
+      // Anthropic: fetch models via API (works with valid key, no credits needed)
+      const apiKey = process.env.ANTHROPIC_API_KEY
+      if (!apiKey) return []
+      const https = require('https')
+      const data: any = await new Promise((resolve, reject) => {
+        const options = {
+          hostname: 'api.anthropic.com',
+          path: '/v1/models',
+          headers: {
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+          },
+        }
+        https.get(options, (res: any) => {
+          let body = ''
+          res.on('data', (chunk: any) => { body += chunk })
+          res.on('end', () => {
+            try { resolve(JSON.parse(body)) } catch (e) { reject(e) }
+          })
+        }).on('error', reject)
+      })
+      if (!data.data) {
+        console.error('[ai:getModels] Anthropic API error:', JSON.stringify(data))
+        // Fallback to known real model IDs if API fails
+        return [
+          { id: 'claude-opus-4-5', label: 'Claude Opus 4.5' },
+          { id: 'claude-sonnet-4-5', label: 'Claude Sonnet 4.5' },
+          { id: 'claude-haiku-4-5', label: 'Claude Haiku 4.5' },
+          { id: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet' },
+          { id: 'claude-3-5-haiku-20241022', label: 'Claude 3.5 Haiku' },
+          { id: 'claude-3-opus-20240229', label: 'Claude 3 Opus' },
+        ]
+      }
+      return (data.data as any[])
+        .map((m: any) => ({ id: m.id, label: m.display_name || m.id }))
+        .sort((a: any, b: any) => a.label.localeCompare(b.label))
+    }
+  } catch (err: any) {
+    console.error('[ai:getModels] error:', err.message)
+    return []
+  }
+})
+
+// Test model availability by sending a minimal 1-token request
+ipcMain.handle('ai:testModels', async (_, payload: { provider: 'anthropic' | 'gemini' | 'openai'; models: string[] }) => {
+  const { provider, models } = payload
+  const results: Record<string, boolean> = {}
+
+  const testOne = async (modelId: string): Promise<boolean> => {
+    try {
+      if (provider === 'gemini') {
+        const apiKey = process.env.GEMINI_API_KEY
+        if (!apiKey) return false
+        const https = require('https')
+        const body = JSON.stringify({ contents: [{ parts: [{ text: 'Hi' }] }], generationConfig: { maxOutputTokens: 1 } })
+        const ok: boolean = await new Promise((resolve) => {
+          const req = https.request({
+            hostname: 'generativelanguage.googleapis.com',
+            path: `/v1beta/models/${modelId}:generateContent?key=${apiKey}`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+          }, (res: any) => {
+            res.resume()
+            resolve(res.statusCode >= 200 && res.statusCode < 300)
+          })
+          req.on('error', () => resolve(false))
+          req.write(body)
+          req.end()
+        })
+        return ok
+      } else if (provider === 'openai') {
+        const apiKey = process.env.OPENAI_API_KEY
+        if (!apiKey) return false
+        const https = require('https')
+        const body = JSON.stringify({ model: modelId, messages: [{ role: 'user', content: 'Hi' }], max_tokens: 1 })
+        const ok: boolean = await new Promise((resolve) => {
+          const req = https.request({
+            hostname: 'api.openai.com',
+            path: '/v1/chat/completions',
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}`, 'Content-Length': Buffer.byteLength(body) },
+          }, (res: any) => {
+            res.resume()
+            resolve(res.statusCode >= 200 && res.statusCode < 300)
+          })
+          req.on('error', () => resolve(false))
+          req.write(body)
+          req.end()
+        })
+        return ok
+      } else {
+        // Anthropic
+        const apiKey = process.env.ANTHROPIC_API_KEY
+        if (!apiKey) return false
+        const https = require('https')
+        const body = JSON.stringify({ model: modelId, max_tokens: 1, messages: [{ role: 'user', content: 'Hi' }] })
+        const ok: boolean = await new Promise((resolve) => {
+          const req = https.request({
+            hostname: 'api.anthropic.com',
+            path: '/v1/messages',
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': apiKey,
+              'anthropic-version': '2023-06-01',
+              'Content-Length': Buffer.byteLength(body),
+            },
+          }, (res: any) => {
+            res.resume()
+            resolve(res.statusCode >= 200 && res.statusCode < 300)
+          })
+          req.on('error', () => resolve(false))
+          req.write(body)
+          req.end()
+        })
+        return ok
+      }
+    } catch {
+      return false
+    }
+  }
+
+  // Test all models in parallel
+  await Promise.all(
+    models.map(async (id) => {
+      results[id] = await testOne(id)
+    })
+  )
+
+  return results
 })
 
 // API key management (using safeStorage for encryption)

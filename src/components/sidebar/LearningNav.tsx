@@ -1,4 +1,6 @@
+import type { ReactNode } from 'react'
 import { useLearningStore } from '../../store/learningStore'
+import { Lock, Circle, CircleDot, CheckCircle2 } from 'lucide-react'
 import { useAiStore } from '../../store/aiStore'
 import { CURRICULUM, getAvailableConcepts } from '../../lib/learning-curriculum'
 import type { ConceptStatus } from '../../types/learning.types'
@@ -105,11 +107,11 @@ function ConceptNode({ title, status, isCurrent, onClick }: {
   isCurrent: boolean
   onClick: () => void
 }) {
-  const icons: Record<ConceptStatus, string> = {
-    locked: '🔒',
-    available: '○',
-    'in-progress': '◐',
-    mastered: '✓',
+  const icons: Record<ConceptStatus, ReactNode> = {
+    locked: <Lock size={11}/>,
+    available: <Circle size={11}/>,
+    'in-progress': <CircleDot size={11}/>,
+    mastered: <CheckCircle2 size={11}/>,
   }
   const colors: Record<ConceptStatus, string> = {
     locked: 'var(--color-text-dim)',
@@ -140,7 +142,7 @@ function ConceptNode({ title, status, isCurrent, onClick }: {
         e.currentTarget.style.background = isCurrent ? 'var(--color-surface)' : 'transparent'
       }}
     >
-      <span style={{ fontSize: '11px', color: colors[status], width: '12px' }}>
+      <span style={{ display:'flex', alignItems:'center', color: colors[status], width: '12px' }}>
         {icons[status]}
       </span>
       <span style={{

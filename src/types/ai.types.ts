@@ -39,5 +39,6 @@ export interface InterviewSession {
 export interface AiStreamPayload {
   systemPrompt: string
   messages: Array<{ role: 'user' | 'assistant'; content: string }>
-  model?: 'claude-sonnet-4-6' | 'claude-opus-4-6'
+  model?: string
+  provider?: 'anthropic' | 'gemini' | 'openai'
 }
