@@ -9,7 +9,8 @@
     "dev:renderer": "vite",
     "build:renderer": "tsc -b && vite build",
     "build:electron": "tsc -p tsconfig.node.json",
-    "build": "npm run build:renderer && npm run build:electron && electron-builder",
+    "build": "npm run build:renderer && npm run build:electron && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --dir",
+    "build:installer": "npm run build:renderer && npm run build:electron && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -63,8 +64,12 @@
       "!node_modules/.cache"
     ],
     "win": {
-      "target": "nsis",
-      "icon": "public/icon.ico"
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ],
+      "icon": "public/icon.ico",
+      "sign": null
     },
     "mac": {
       "target": "dmg"

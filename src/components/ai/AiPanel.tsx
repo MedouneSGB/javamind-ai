@@ -1,5 +1,4 @@
 import { useAiStore } from '../../store/aiStore'
-import type { AiProvider } from '../../store/aiStore'
 import { AiChat } from './AiChat'
 import { CodeTutor } from './CodeTutor'
 import { CodeReviewer } from './CodeReviewer'
