@@ -99,7 +99,7 @@ export function RubberDuck() {
               color: msg.role === 'user' ? 'var(--color-accent)' : 'var(--color-text-dim)',
               marginBottom: '4px',
             }}>
-              {msg.role === 'user' ? 'YOU' : '🦆 DUCK'}
+              {msg.role === 'user' ? 'YOU' : 'DUCK'}
             </div>
             {msg.role === 'user' ? (
               <div style={{ color: 'var(--color-text)', whiteSpace: 'pre-wrap' }}>{msg.content}</div>
@@ -209,7 +209,7 @@ function StartForm({ onStart }: { onStart: (desc: string) => void }) {
           opacity: desc.trim() ? 1 : 0.5,
         }}
       >
-        🦆 Talk to the Duck
+        <MessageCircle size={13}/> Talk to the Duck
       </button>
     </div>
   )
