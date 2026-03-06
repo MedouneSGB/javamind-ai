@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAiStream } from '../../hooks/useAiStream'
 import { useAiStore } from '../../store/aiStore'
+import { Briefcase, Send } from 'lucide-react'
 import { useLearningStore } from '../../store/learningStore'
 import { SYSTEM_PROMPTS } from '../../lib/prompt-templates'
 import { StreamingText } from './StreamingText'
@@ -65,7 +66,7 @@ export function InterviewPrep() {
     return (
       <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-accent)' }}>
-          💼 Interview Prep
+          <Briefcase size={13}/> Interview Prep
         </div>
         <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
           Mock Java technical interview. AI provides real feedback and scores your answers.
@@ -135,7 +136,7 @@ export function InterviewPrep() {
             opacity: topics.length === 0 ? 0.5 : 1,
           }}
         >
-          💼 Start Interview
+          <Briefcase size={12}/> Start Interview
         </button>
       </div>
     )
@@ -222,7 +223,7 @@ export function InterviewPrep() {
               fontSize: '12px',
             }}
           >
-            →
+            <Send size={12}/>
           </button>
         </div>
       </div>

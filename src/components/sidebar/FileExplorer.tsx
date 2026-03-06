@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { FolderOpen, Folder, Coffee, Settings2, FileJson, FileCode2, FileText, File, RefreshCw, ChevronDown, ChevronRight } from 'lucide-react'
 import { useProjectStore } from '../../store/projectStore'
 import { useEditorStore } from '../../store/editorStore'
 import { ipc } from '../../lib/ipc'
@@ -23,7 +24,7 @@ export function FileExplorer() {
         textAlign: 'center',
         lineHeight: 1.8,
       }}>
-        <div style={{ marginBottom: '8px', fontSize: '24px' }}>📂</div>
+        <div style={{ marginBottom: '8px', color: 'var(--color-accent)' }}><FolderOpen size={24}/></div>
         Open a project to<br />browse files
       </div>
     )
@@ -51,7 +52,7 @@ export function FileExplorer() {
             fontSize: '12px', padding: '0 2px',
           }}
           title="Refresh"
-        >↻</button>
+        ><RefreshCw size={12}/></button>
       </div>
       {fileTree.children.map(node => (
         <FileNode
@@ -76,13 +77,13 @@ function FileNode({ node, depth, onOpenFile }: {
   const [expanded, setExpanded] = useState(depth === 0)
 
   const getIcon = () => {
-    if (node.isDirectory) return expanded ? '📂' : '📁'
-    if (node.name.endsWith('.java')) return '☕'
-    if (node.name.endsWith('.class')) return '⚙'
-    if (node.name.endsWith('.json')) return '{}'
-    if (node.name.endsWith('.xml')) return '<>'
-    if (node.name.endsWith('.md')) return '📝'
-    return '📄'
+    if (node.isDirectory) return expanded ? <FolderOpen size={13}/> : <Folder size={13}/>
+    if (node.name.endsWith('.java')) return <Coffee size={12}/>
+    if (node.name.endsWith('.class')) return <Settings2 size={12}/>
+    if (node.name.endsWith('.json')) return <FileJson size={12}/>
+    if (node.name.endsWith('.xml')) return <FileCode2 size={12}/>
+    if (node.name.endsWith('.md')) return <FileText size={12}/>
+    return <File size={12}/>
   }
 
   const handleClick = () => {
@@ -114,11 +115,11 @@ function FileNode({ node, depth, onOpenFile }: {
         onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
       >
         {node.isDirectory && (
-          <span style={{ fontSize: '9px', color: 'var(--color-text-dim)', width: '8px' }}>
-            {expanded ? '▼' : '▶'}
+          <span style={{ display:'flex', alignItems:'center', color: 'var(--color-text-dim)', width: '10px' }}>
+            {expanded ? <ChevronDown size={9}/> : <ChevronRight size={9}/>}
           </span>
         )}
-        <span style={{ fontSize: '11px' }}>{getIcon()}</span>
+        <span style={{ display:'flex', alignItems:'center' }}>{getIcon()}</span>
         <span style={{
           overflow: 'hidden',
           textOverflow: 'ellipsis',

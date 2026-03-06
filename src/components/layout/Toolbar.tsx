@@ -3,6 +3,7 @@ import { useProjectStore } from '../../store/projectStore'
 import { useAiStore } from '../../store/aiStore'
 import { ipc } from '../../lib/ipc'
 import { useEditorStore } from '../../store/editorStore'
+import { FolderOpen, FileText, Play, Square, Loader2, Sparkles, Search, Target, MessageCircle, PanelRightClose, PanelRightOpen } from 'lucide-react'
 
 export function Toolbar() {
   const { run, stop, isCompiling, isRunning } = useJavaRunner()
@@ -40,10 +41,10 @@ export function Toolbar() {
       {/* File actions */}
       <ToolbarGroup>
         <ToolBtn onClick={handleOpenProject} title="Open Project (Ctrl+Shift+O)">
-          📂 Open
+          <FolderOpen size={13}/> Open
         </ToolBtn>
         <ToolBtn onClick={handleOpenFile} title="Open File">
-          📄 File
+          <FileText size={13}/> File
         </ToolBtn>
       </ToolbarGroup>
 
@@ -53,7 +54,7 @@ export function Toolbar() {
       <ToolbarGroup>
         {isRunning ? (
           <ToolBtn onClick={stop} title="Stop (Ctrl+F5)" accent="error">
-            ■ Stop
+            <Square size={11} fill='currentColor'/> Stop
           </ToolBtn>
         ) : (
           <ToolBtn
@@ -62,7 +63,7 @@ export function Toolbar() {
             accent="success"
             disabled={isCompiling || !projectPath}
           >
-            {isCompiling ? '⚡ Building...' : '▶ Run'}
+            {isCompiling ? <><Loader2 size={11}/> Building...</> : <><Play size={11} fill='currentColor'/> Run</>}
           </ToolBtn>
         )}
       </ToolbarGroup>
@@ -82,19 +83,19 @@ export function Toolbar() {
           onClick={() => { setMode('review'); if (!isPanelOpen) togglePanel() }}
           title="Code Review"
         >
-          🔍 Review
+          <Search size={11}/> Review
         </ToolBtn>
         <ToolBtn
           onClick={() => { setMode('challenge'); if (!isPanelOpen) togglePanel() }}
           title="Challenge Mode (Ctrl+Shift+C)"
         >
-          🎯 Challenge
+          <Target size={11}/> Challenge
         </ToolBtn>
         <ToolBtn
           onClick={() => { setMode('duck'); if (!isPanelOpen) togglePanel() }}
           title="Rubber Duck Debug"
         >
-          🦆 Duck
+          <MessageCircle size={11}/> Duck
         </ToolBtn>
       </ToolbarGroup>
 
@@ -107,7 +108,7 @@ export function Toolbar() {
         title="Toggle AI Panel (Ctrl+Shift+A)"
         accent={isPanelOpen ? 'accent' : undefined}
       >
-        {isPanelOpen ? '⟩ Hide AI' : '⟨ Show AI'}
+        {isPanelOpen ? <><PanelRightClose size={11}/> Hide AI</> : <><PanelRightOpen size={11}/> Show AI</>}
       </ToolBtn>
     </div>
   )

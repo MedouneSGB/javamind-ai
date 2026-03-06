@@ -6,14 +6,15 @@ import { ChallengeMode } from './ChallengeMode'
 import { RubberDuck } from './RubberDuck'
 import { InterviewPrep } from './InterviewPrep'
 import type { AiMode } from '../../types/ai.types'
+import { Sparkles, BookOpen, Search, Target, MessageCircle, Briefcase } from 'lucide-react'
 
-const MODES: { id: AiMode; icon: string; label: string }[] = [
-  { id: 'chat', icon: '✦', label: 'Mentor' },
-  { id: 'tutor', icon: '📚', label: 'Tutor' },
-  { id: 'review', icon: '🔍', label: 'Review' },
-  { id: 'challenge', icon: '🎯', label: 'Challenge' },
-  { id: 'duck', icon: '🦆', label: 'Duck' },
-  { id: 'interview', icon: '💼', label: 'Interview' },
+const MODES: { id: AiMode; icon: React.ReactNode; label: string }[] = [
+  { id: 'chat',      icon: <Sparkles size={13} />,      label: 'Mentor' },
+  { id: 'tutor',     icon: <BookOpen size={13} />,       label: 'Tutor' },
+  { id: 'review',    icon: <Search size={13} />,         label: 'Review' },
+  { id: 'challenge', icon: <Target size={13} />,         label: 'Challenge' },
+  { id: 'duck',      icon: <MessageCircle size={13} />,  label: 'Duck' },
+  { id: 'interview', icon: <Briefcase size={13} />,      label: 'Interview' },
 ]
 
 
@@ -48,8 +49,8 @@ export function AiPanel() {
             background: 'linear-gradient(135deg, var(--color-accent), var(--color-accent-2))',
             borderRadius: '5px',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '11px', color: '#0d0d0d', fontWeight: 700,
-          }}>✦</div>
+            color: '#0d0d0d',
+          }}><Sparkles size={11} /></div>
           <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text)' }}>AI Assistant</span>
         </div>
 
@@ -79,7 +80,7 @@ export function AiPanel() {
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '1px',
+                gap: '2px',
                 transition: 'all 0.1s',
                 whiteSpace: 'nowrap',
               }}
@@ -90,7 +91,7 @@ export function AiPanel() {
                 if (activeMode !== mode.id) e.currentTarget.style.color = 'var(--color-text-dim)'
               }}
             >
-              <span style={{ fontSize: '13px' }}>{mode.icon}</span>
+              <span style={{ display: 'flex', alignItems: 'center' }}>{mode.icon}</span>
               <span style={{ fontSize: '9px', letterSpacing: '0.3px' }}>{mode.label}</span>
             </button>
           ))}

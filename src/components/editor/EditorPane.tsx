@@ -1,4 +1,5 @@
 import { useEditorStore } from '../../store/editorStore'
+import { Coffee, FolderOpen, FileText, Sparkles } from 'lucide-react'
 import { MonacoEditor } from './MonacoEditor'
 import { EditorTabs } from './EditorTabs'
 
@@ -50,18 +51,18 @@ function WelcomeScreen() {
         background: 'var(--color-surface)',
         borderRadius: '16px',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: '32px',
+        display:'flex', alignItems:'center', justifyContent:'center',
         border: '1px solid var(--color-border)',
       }}>
-        ☕
+        <Coffee size={32}/>
       </div>
       <div style={{ textAlign: 'center' }}>
         <div style={{ fontSize: '18px', fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: '8px' }}>
           JavaMind AI
         </div>
         <div style={{ fontSize: '13px', lineHeight: 1.8 }}>
-          📂 Open a project with <Key>Ctrl+Shift+O</Key><br />
-          📄 Or open a file with <Key>Ctrl+O</Key><br />
+          <FolderOpen size={13}/> Open a project with <Key>Ctrl+Shift+O</Key><br />
+          <FileText size={13}/> Or open a file with <Key>Ctrl+O</Key><br />
           ✦ Ask the AI mentor anything with <Key>Ctrl+Shift+A</Key>
         </div>
       </div>

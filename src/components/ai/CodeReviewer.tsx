@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAiStream } from '../../hooks/useAiStream'
 import { useAiStore } from '../../store/aiStore'
+import { Search, Loader2 } from 'lucide-react'
 import { SYSTEM_PROMPTS } from '../../lib/prompt-templates'
 import { StreamingText } from './StreamingText'
 
@@ -26,7 +27,7 @@ export function CodeReviewer() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '12px' }}>
       <div style={{ marginBottom: '10px' }}>
         <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-accent)', marginBottom: '6px' }}>
-          🔍 Code Review
+          <Search size={13}/> Code Review
         </div>
         <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', lineHeight: 1.6, marginBottom: '10px' }}>
           Senior Java engineer reviews your code for correctness, best practices, and Java idioms.

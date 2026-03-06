@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { Sparkles, Send } from 'lucide-react'
 import { useAiStream } from '../../hooks/useAiStream'
 import { useAiStore, type AiProvider, type ModelEntry } from '../../store/aiStore'
 import { ipc } from '../../lib/ipc'
@@ -297,7 +298,7 @@ export function AiChat() {
               transition: 'all 0.15s',
             }}
           >
-            ↑
+            <Send size={13}/>
           </button>
         </div>
         <div style={{ fontSize: '10px', color: 'var(--color-text-dim)', marginTop: '4px', textAlign: 'center' }}>
