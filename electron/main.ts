@@ -167,15 +167,19 @@ interface FileTreeNode {
 // Java runner IPC
 // ─────────────────────────────────────────────────────────
 ipcMain.handle('java:compile', async (event, { projectPath }: { projectPath: string }) => {
-  const srcDir = path.join(projectPath, 'src')
   const outDir = path.join(projectPath, 'out')
 
   // Ensure out dir exists
   if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true })
 
-  // Collect all .java files
-  const javaFiles = collectJavaFiles(srcDir)
-  if (javaFiles.length === 0) return { success: false, errors: [{ message: 'No .java files found in src/' }] }
+  // Look for Java files: prefer src/ subfolder, fall back to project root
+  const srcDir = fs.existsSync(path.join(projectPath, 'src'))
+    ? path.join(projectPath, 'src')
+    : projectPath
+
+  // Collect all .java files (excluding out/ to avoid recompiling .java in output)
+  const javaFiles = collectJavaFiles(srcDir).filter(f => !f.includes(path.sep + 'out' + path.sep))
+  if (javaFiles.length === 0) return { success: false, errors: [{ message: `No .java files found in ${srcDir === projectPath ? 'project root' : 'src/'}` }] }
 
   return new Promise((resolve) => {
     const proc = spawn('javac', ['-d', outDir, '-cp', srcDir, ...javaFiles], { cwd: projectPath })

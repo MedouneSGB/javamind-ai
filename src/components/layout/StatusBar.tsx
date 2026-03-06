@@ -1,5 +1,5 @@
 import { useProjectStore } from '../../store/projectStore'
-import { FolderOpen, Zap, Play, XCircle, CheckCircle2, Circle, Flame } from 'lucide-react'
+import { FolderOpen, Zap, Play, XCircle, CheckCircle2, Circle, Flame, Sparkles } from 'lucide-react'
 import { useLearningStore } from '../../store/learningStore'
 import { useAiStore } from '../../store/aiStore'
 
@@ -46,7 +46,7 @@ export function StatusBar() {
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         {/* AI streaming */}
         {isStreaming && (
-          <StatusItem color="var(--color-accent)" pulse>✦ AI thinking...</StatusItem>
+          <StatusItem color="var(--color-accent)" pulse><Sparkles size={11}/> AI thinking...</StatusItem>
         )}
 
         {/* Daily kata */}
