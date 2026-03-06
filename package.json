@@ -5,7 +5,7 @@
   "description": "Java IDE with integrated Claude AI learning platform",
   "main": "electron/dist/main.js",
   "scripts": {
-    "dev": "concurrently -k \"cross-env VITE_DEV=true vite --port 5173 --strictPort\" \"wait-on http://localhost:5173 && cross-env ELECTRON_DEV=true VITE_DEV_PORT=5173 electron .\"",
+    "dev": "tsc -p tsconfig.node.json && concurrently -k \"cross-env VITE_DEV=true vite --port 5173 --strictPort\" \"wait-on http://localhost:5173 && cross-env ELECTRON_DEV=true VITE_DEV_PORT=5173 electron .\"",
     "dev:renderer": "vite",
     "build:renderer": "tsc -b && vite build",
     "build:electron": "tsc -p tsconfig.node.json",

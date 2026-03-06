@@ -13,6 +13,7 @@ import { useProjectStore } from '../../store/projectStore'
 import { useEditorStore } from '../../store/editorStore'
 import { useSyncOnChange } from '../../hooks/useSyncOnChange'
 import { pullFromSupabase } from '../../lib/sync'
+import { supabase } from '../../lib/supabase'
 import { ipc } from '../../lib/ipc'
 import * as pathBrowser from 'path-browserify'
 
@@ -30,18 +31,32 @@ export function AppShell() {
   // Sync on store changes
   useSyncOnChange()
 
-  // Listen for OAuth deep links from the main process
+  // Listen for OAuth deep links from the main process (Electron protocol handler)
   useEffect(() => {
     return ipc.auth.onDeepLink((url) => {
       handleDeepLink(url)
     })
   }, [handleDeepLink])
 
-  // When session becomes available, pull data from Supabase
+  // Supabase auth state change listener — always active, not inside AuthModal
+  useEffect(() => {
+    if (!supabase) return
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      useAuthStore.getState().setSession(newSession)
+      if (newSession?.user) {
+        fetchProfile().then(() => pullFromSupabase())
+      }
+    })
+    return () => subscription.unsubscribe()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // When session becomes available (e.g. restored from localStorage), pull data
   useEffect(() => {
     if (session) {
       fetchProfile().then(() => pullFromSupabase())
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.access_token])
 
   // Auto-reopen last project on startup
