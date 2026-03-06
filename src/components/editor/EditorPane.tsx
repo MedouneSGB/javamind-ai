@@ -1,4 +1,5 @@
 import { useEditorStore } from '../../store/editorStore'
+import { useLangStore } from '../../store/langStore'
 import { Coffee, FolderOpen, FileText, Sparkles } from 'lucide-react'
 import { MonacoEditor } from './MonacoEditor'
 import { EditorTabs } from './EditorTabs'
@@ -35,6 +36,7 @@ export function EditorPane() {
 }
 
 function WelcomeScreen() {
+  const { t } = useLangStore()
   return (
     <div style={{
       flex: 1,
@@ -60,9 +62,9 @@ function WelcomeScreen() {
           JavaMind AI
         </div>
         <div style={{ fontSize: '13px', lineHeight: 1.8 }}>
-          <FolderOpen size={13}/> Open a project with <Key>Ctrl+Shift+O</Key><br />
-          <FileText size={13}/> Or open a file with <Key>Ctrl+O</Key><br />
-          <Sparkles size={13}/> Ask the AI mentor anything with <Key>Ctrl+Shift+A</Key>
+          <FolderOpen size={13}/> {t('openProjectWith')} <Key>Ctrl+Shift+O</Key><br />
+          <FileText size={13}/> {t('orOpenFileWith')} <Key>Ctrl+O</Key><br />
+          <Sparkles size={13}/> {t('askMentor')} <Key>Ctrl+Shift+A</Key>
         </div>
       </div>
     </div>

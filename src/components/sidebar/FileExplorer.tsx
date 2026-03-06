@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { useProjectStore } from '../../store/projectStore'
 import { useEditorStore } from '../../store/editorStore'
+import { useLangStore } from '../../store/langStore'
 import { ipc } from '../../lib/ipc'
 import type { FileTreeNode } from '../../types/editor.types'
 
@@ -20,6 +21,7 @@ type CreatingState = { parentPath: string; type: 'file' | 'folder' } | null
 export function FileExplorer() {
   const { fileTree, projectPath, setFileTree } = useProjectStore()
   const { openFile } = useEditorStore()
+  const { t } = useLangStore()
   const [creating, setCreating] = useState<CreatingState>(null)
 
   const refreshTree = async () => {
@@ -59,7 +61,7 @@ export function FileExplorer() {
         lineHeight: 1.8,
       }}>
         <div style={{ marginBottom: '8px', color: 'var(--color-accent)' }}><FolderOpen size={24}/></div>
-        Open a project to<br />browse files
+        {t('openProject')}
       </div>
     )
   }
@@ -87,14 +89,14 @@ export function FileExplorer() {
         </span>
         <div style={{ display: 'flex', gap: '2px', flexShrink: 0 }}>
           <IconBtn
-            title="New Java File"
+            title={t('newJavaFile')}
             onClick={() => setCreating({ parentPath: fileTree.path, type: 'file' })}
           ><FilePlus size={12}/></IconBtn>
           <IconBtn
-            title="New Folder"
+            title={t('newFolder')}
             onClick={() => setCreating({ parentPath: fileTree.path, type: 'folder' })}
           ><FolderPlus size={12}/></IconBtn>
-          <IconBtn title="Refresh" onClick={refreshTree}><RefreshCw size={12}/></IconBtn>
+          <IconBtn title={t('refresh')} onClick={refreshTree}><RefreshCw size={12}/></IconBtn>
         </div>
       </div>
 
@@ -218,8 +220,9 @@ function FileNode({ node, depth, creating, onOpenFile, onStartCreate, onConfirmC
   onConfirmCreate: (name: string) => void
   onCancelCreate: () => void
 }) {
-  const [expanded, setExpanded] = useState(depth === 0)
+  const [expanded, setExpanded] = useState(false)
   const [hovered, setHovered] = useState(false)
+  const { t } = useLangStore()
 
   const getIcon = () => {
     if (node.isDirectory) return expanded ? <FolderOpen size={13}/> : <Folder size={13}/>
@@ -273,11 +276,11 @@ function FileNode({ node, depth, creating, onOpenFile, onStartCreate, onConfirmC
             onClick={(e) => e.stopPropagation()}
           >
             <IconBtn
-              title="New Java File here"
+              title={t('newJavaFileHere')}
               onClick={() => { setExpanded(true); onStartCreate(node.path, 'file') }}
             ><FilePlus size={11}/></IconBtn>
             <IconBtn
-              title="New Folder here"
+              title={t('newFolderHere')}
               onClick={() => { setExpanded(true); onStartCreate(node.path, 'folder') }}
             ><FolderPlus size={11}/></IconBtn>
           </div>

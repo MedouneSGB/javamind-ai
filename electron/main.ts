@@ -14,6 +14,12 @@ if (process.env.ELECTRON_DEV) {
 let mainWindow: BrowserWindow | null = null
 const runningProcesses = new Map<number, ChildProcess>()
 
+// Single instance lock — required for Windows deep link protocol handling
+const gotLock = app.requestSingleInstanceLock()
+if (!gotLock) {
+  app.quit()
+}
+
 function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1400,
@@ -677,7 +683,38 @@ app.whenReady().then(async () => {
   } catch {}
 })
 
-// Open external links
-ipcMain.on('shell:openExternal', (_, url: string) => {
-  shell.openExternal(url)
+// Open external links (handle = awaitable from renderer)
+ipcMain.handle('shell:openExternal', (_, url: string) => {
+  return shell.openExternal(url)
+})
+
+// ─────────────────────────────────────────────────────────
+// Deep link protocol — javamind://
+// ─────────────────────────────────────────────────────────
+if (process.defaultApp) {
+  if (process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient('javamind', process.execPath, [path.resolve(process.argv[1])])
+  }
+} else {
+  app.setAsDefaultProtocolClient('javamind')
+}
+
+// Windows: second-instance fires when the OS opens the protocol URL
+app.on('second-instance', (_event, commandLine) => {
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore()
+    mainWindow.focus()
+  }
+  const deepLinkUrl = commandLine.find(arg => arg.startsWith('javamind://'))
+  if (deepLinkUrl) {
+    mainWindow?.webContents.send('auth:deeplink', deepLinkUrl)
+  }
+})
+
+// macOS: open-url fires for deep links
+app.on('open-url', (event, url) => {
+  event.preventDefault()
+  if (url.startsWith('javamind://')) {
+    mainWindow?.webContents.send('auth:deeplink', url)
+  }
 })

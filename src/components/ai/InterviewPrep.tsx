@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAiStream } from '../../hooks/useAiStream'
 import { useAiStore } from '../../store/aiStore'
+import { useLangStore } from '../../store/langStore'
 import { Briefcase, Send } from 'lucide-react'
 import { useLearningStore } from '../../store/learningStore'
 import { SYSTEM_PROMPTS } from '../../lib/prompt-templates'
@@ -13,6 +14,7 @@ export function InterviewPrep() {
   const { stream } = useAiStream()
   const { isStreaming, currentStreamContent } = useAiStore()
   const { } = useLearningStore()
+  const { t } = useLangStore()
   const [level, setLevel] = useState<'junior' | 'mid' | 'senior'>('junior')
   const [topics, setTopics] = useState<string[]>(['Core Java', 'OOP'])
   const [messages, setMessages] = useState<AiMessage[]>([])
@@ -66,16 +68,16 @@ export function InterviewPrep() {
     return (
       <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-accent)' }}>
-          <Briefcase size={13}/> Interview Prep
+          <Briefcase size={13}/> {t('interviewTitle')}
         </div>
         <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
-          Mock Java technical interview. AI provides real feedback and scores your answers.
+          {t('interviewDesc')}
         </div>
 
         {/* Level */}
         <div>
           <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-text-dim)', marginBottom: '5px' }}>
-            LEVEL
+            {t('levelLabel')}
           </div>
           <div style={{ display: 'flex', gap: '5px' }}>
             {(['junior', 'mid', 'senior'] as const).map(l => (
@@ -88,10 +90,10 @@ export function InterviewPrep() {
                   border: `1px solid ${level === l ? 'var(--color-accent)' : 'var(--color-border)'}`,
                   borderRadius: '5px',
                   color: level === l ? 'var(--color-accent)' : 'var(--color-text-muted)',
-                  fontSize: '12px', cursor: 'pointer', textTransform: 'capitalize',
+                  fontSize: '12px', cursor: 'pointer',
                 }}
               >
-                {l}
+                {t(`lvl${l.charAt(0).toUpperCase() + l.slice(1)}`)}
               </button>
             ))}
           </div>
@@ -100,7 +102,7 @@ export function InterviewPrep() {
         {/* Topics */}
         <div>
           <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-text-dim)', marginBottom: '5px' }}>
-            TOPICS
+            {t('topicsLabel')}
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
             {TOPIC_OPTIONS.map(t => (
@@ -136,7 +138,7 @@ export function InterviewPrep() {
             opacity: topics.length === 0 ? 0.5 : 1,
           }}
         >
-          <Briefcase size={12}/> Start Interview
+          <Briefcase size={12}/> {t('startInterview')}
         </button>
       </div>
     )
@@ -154,12 +156,12 @@ export function InterviewPrep() {
         flexShrink: 0,
         fontSize: '11px',
       }}>
-        <span style={{ color: 'var(--color-accent)', fontWeight: 600 }}>💼 Interview — {level.charAt(0).toUpperCase() + level.slice(1)}</span>
+        <span style={{ color: 'var(--color-accent)', fontWeight: 600 }}><Briefcase size={11}/> {t(`lvl${level.charAt(0).toUpperCase() + level.slice(1)}`)}</span>
         <button
           onClick={() => { setIsActive(false); setMessages([]) }}
           style={{ background: 'transparent', border: 'none', color: 'var(--color-text-dim)', cursor: 'pointer', fontSize: '11px' }}
         >
-          End Session
+          {t('endSession')}
         </button>
       </div>
 
@@ -172,7 +174,7 @@ export function InterviewPrep() {
             borderRadius: '8px',
           }}>
             <div style={{ fontSize: '10px', fontWeight: 700, color: msg.role === 'user' ? 'var(--color-accent)' : 'var(--color-text-dim)', marginBottom: '4px' }}>
-              {msg.role === 'user' ? 'YOUR ANSWER' : '💼 INTERVIEWER'}
+              {msg.role === 'user' ? t('yourAnswer') : t('interviewer')}
             </div>
             {msg.role === 'user'
               ? <div style={{ fontSize: '12.5px', color: 'var(--color-text)', whiteSpace: 'pre-wrap' }}>{msg.content}</div>
@@ -182,7 +184,7 @@ export function InterviewPrep() {
         ))}
         {isStreaming && currentStreamContent && (
           <div style={{ padding: '8px 10px', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '8px' }}>
-            <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--color-text-dim)', marginBottom: '4px' }}>💼 INTERVIEWER</div>
+            <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--color-text-dim)', marginBottom: '4px' }}>{t('interviewer')}</div>
             <StreamingText content={currentStreamContent} isStreaming />
           </div>
         )}
@@ -194,7 +196,7 @@ export function InterviewPrep() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAnswer() } }}
-            placeholder="Your answer... (Enter to submit)"
+            placeholder={t('answerPlaceholder')}
             disabled={isStreaming}
             rows={2}
             style={{

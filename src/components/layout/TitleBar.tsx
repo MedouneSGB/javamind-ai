@@ -1,12 +1,20 @@
 import { ipc } from '../../lib/ipc'
 import { useThemeStore } from '../../store/themeStore'
-import { RotateCcw, Sun, Moon, Minus, Square, X } from 'lucide-react'
+import { useAuthStore } from '../../store/authStore'
+import { RotateCcw, Sun, Moon, Minus, Square, X, User } from 'lucide-react'
+import { AuthModal } from '../auth/AuthModal'
 
 export function TitleBar() {
   const { theme, toggleTheme } = useThemeStore()
+  const { session, user, profile, setAuthModalOpen } = useAuthStore()
   const isDark = theme === 'dark'
+  const isLoggedIn = !!session && !!user
+  const avatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url
+  const displayName = profile?.username || user?.user_metadata?.name || user?.email?.split('@')[0]
 
   return (
+    <>
+    <AuthModal />
     <div
       style={{
         height: '36px',
@@ -40,6 +48,32 @@ export function TitleBar() {
 
       {/* Right controls */}
       <div style={{ display: 'flex', alignItems: 'center', WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+        {/* User account button */}
+        <button
+          onClick={() => setAuthModalOpen(true)}
+          title={isLoggedIn ? displayName || 'Account' : 'Sign in'}
+          style={{
+            height: '36px', padding: '0 10px',
+            background: 'transparent', border: 'none',
+            color: isLoggedIn ? 'var(--color-accent)' : 'var(--color-text-dim)',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px',
+            fontSize: '11px', transition: 'background 0.1s, color 0.1s',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-surface)'; e.currentTarget.style.color = 'var(--color-accent)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = isLoggedIn ? 'var(--color-accent)' : 'var(--color-text-dim)' }}
+        >
+          {isLoggedIn && avatarUrl ? (
+            <img src={avatarUrl} alt="" style={{ width: '16px', height: '16px', borderRadius: '50%' }} />
+          ) : (
+            <User size={12} />
+          )}
+          {isLoggedIn && displayName && (
+            <span style={{ maxWidth: '80px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {displayName}
+            </span>
+          )}
+        </button>
+
         {/* Refresh (dev) */}
         <button
           onClick={() => window.location.reload()}
@@ -90,6 +124,7 @@ export function TitleBar() {
         <WinBtn onClick={() => ipc.window.close()} title="Close" isClose><X size={12}/></WinBtn>
       </div>
     </div>
+    </>
   )
 }
 

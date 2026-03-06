@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAiStream } from '../../hooks/useAiStream'
 import { useAiStore } from '../../store/aiStore'
+import { useLangStore } from '../../store/langStore'
 import { MessageCircle, Send, CheckCircle2 } from 'lucide-react'
 import { SYSTEM_PROMPTS } from '../../lib/prompt-templates'
 import { StreamingText } from './StreamingText'
@@ -9,6 +10,7 @@ import type { AiMessage } from '../../types/ai.types'
 export function RubberDuck() {
   const { stream, getContext } = useAiStream()
   const { isStreaming, currentStreamContent } = useAiStore()
+  const { t } = useLangStore()
   const [messages, setMessages] = useState<AiMessage[]>([])
   const [input, setInput] = useState('')
   const [isActive, setIsActive] = useState(false)
@@ -68,13 +70,13 @@ export function RubberDuck() {
       <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <div style={{ textAlign: 'center', padding: '12px 0' }}>
           <div style={{ marginBottom: '8px', color: 'var(--color-accent)' }}><MessageCircle size={48}/></div>
-          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-accent)' }}>Rubber Duck Debugger</div>
+          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-accent)' }}>{t('duckTitle')}</div>
           <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', lineHeight: 1.7, marginTop: '6px' }}>
-            Describe your bug. The duck will ask you<br />
-            questions to help YOU find the answer.
+            {t('duckDesc1')}<br />
+            {t('duckDesc2')}
             <br />
             <span style={{ color: 'var(--color-text-dim)', fontSize: '11px' }}>
-              (The duck never gives the answer directly)
+              {t('duckNote')}
             </span>
           </div>
         </div>
@@ -99,7 +101,7 @@ export function RubberDuck() {
               color: msg.role === 'user' ? 'var(--color-accent)' : 'var(--color-text-dim)',
               marginBottom: '4px',
             }}>
-              {msg.role === 'user' ? 'YOU' : 'DUCK'}
+              {msg.role === 'user' ? t('duckYou') : t('duckLabel')}
             </div>
             {msg.role === 'user' ? (
               <div style={{ color: 'var(--color-text)', whiteSpace: 'pre-wrap' }}>{msg.content}</div>
@@ -130,7 +132,7 @@ export function RubberDuck() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleReply()}
-            placeholder="Answer the duck's question..."
+            placeholder={t('duckAnswerPlaceholder')}
             disabled={isStreaming}
             style={{
               flex: 1,
@@ -166,7 +168,7 @@ export function RubberDuck() {
             color: 'var(--color-text-dim)', fontSize: '11px', cursor: 'pointer',
           }}
         >
-          <CheckCircle2 size={12}/> I found the bug! End session
+          <CheckCircle2 size={12}/> {t('duckFoundBug')}
         </button>
       </div>
     </div>
@@ -175,12 +177,13 @@ export function RubberDuck() {
 
 function StartForm({ onStart }: { onStart: (desc: string) => void }) {
   const [desc, setDesc] = useState('')
+  const { t } = useLangStore()
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
       <textarea
         value={desc}
         onChange={(e) => setDesc(e.target.value)}
-        placeholder="Describe your bug... e.g. 'My loop runs one too many times and I can't figure out why'"
+        placeholder={t('duckDescPlaceholder')}
         rows={4}
         style={{
           background: 'var(--color-surface)',
@@ -209,7 +212,7 @@ function StartForm({ onStart }: { onStart: (desc: string) => void }) {
           opacity: desc.trim() ? 1 : 0.5,
         }}
       >
-        <MessageCircle size={13}/> Talk to the Duck
+        <MessageCircle size={13}/> {t('duckTalkBtn')}
       </button>
     </div>
   )

@@ -1,4 +1,5 @@
 import { useAiStore } from '../../store/aiStore'
+import { useLangStore } from '../../store/langStore'
 import { AiChat } from './AiChat'
 import { CodeTutor } from './CodeTutor'
 import { CodeReviewer } from './CodeReviewer'
@@ -8,18 +9,18 @@ import { InterviewPrep } from './InterviewPrep'
 import type { AiMode } from '../../types/ai.types'
 import { Sparkles, BookOpen, Search, Target, MessageCircle, Briefcase } from 'lucide-react'
 
-const MODES: { id: AiMode; icon: React.ReactNode; label: string }[] = [
-  { id: 'chat',      icon: <Sparkles size={13} />,      label: 'Mentor' },
-  { id: 'tutor',     icon: <BookOpen size={13} />,       label: 'Tutor' },
-  { id: 'review',    icon: <Search size={13} />,         label: 'Review' },
-  { id: 'challenge', icon: <Target size={13} />,         label: 'Challenge' },
-  { id: 'duck',      icon: <MessageCircle size={13} />,  label: 'Duck' },
-  { id: 'interview', icon: <Briefcase size={13} />,      label: 'Interview' },
-]
-
-
 export function AiPanel() {
   const { activeMode, setMode, isPanelOpen } = useAiStore()
+  const { t } = useLangStore()
+
+  const MODES: { id: AiMode; icon: React.ReactNode; label: string }[] = [
+    { id: 'chat',      icon: <Sparkles size={13} />,      label: t('tabMentor') },
+    { id: 'tutor',     icon: <BookOpen size={13} />,       label: t('tabTutor') },
+    { id: 'review',    icon: <Search size={13} />,         label: t('tabReview') },
+    { id: 'challenge', icon: <Target size={13} />,         label: t('tabChallenge') },
+    { id: 'duck',      icon: <MessageCircle size={13} />,  label: t('tabDuck') },
+    { id: 'interview', icon: <Briefcase size={13} />,      label: t('tabInterview') },
+  ]
 
   if (!isPanelOpen) return null
 
@@ -51,7 +52,7 @@ export function AiPanel() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: '#0d0d0d',
           }}><Sparkles size={11} /></div>
-          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text)' }}>AI Assistant</span>
+          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text)' }}>{t('aiAssistant')}</span>
         </div>
 
         {/* Mode tabs */}

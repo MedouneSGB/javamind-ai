@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Send } from 'lucide-react'
 import { useAiStream } from '../../hooks/useAiStream'
 import { useAiStore, type AiProvider, type ModelEntry } from '../../store/aiStore'
+import { useLangStore } from '../../store/langStore'
 import { ipc } from '../../lib/ipc'
 import { SYSTEM_PROMPTS } from '../../lib/prompt-templates'
 import { StreamingText } from './StreamingText'
@@ -23,6 +24,7 @@ export function AiChat() {
     aiProvider, setAiProvider, aiModel, setAiModel,
     getModelCache, setModelCache, updateModelStatus, isCacheValid,
   } = useAiStore()
+  const { t } = useLangStore()
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -160,7 +162,7 @@ export function AiChat() {
               padding: '2px 6px',
             }}
           >
-            Clear chat
+            {t('clearChat')}
           </button>
         </div>
       )}
@@ -202,7 +204,7 @@ export function AiChat() {
             value={aiModel}
             onChange={(e) => setAiModel(e.target.value)}
             disabled={loadingModels || isStreaming}
-            title={testingModels ? 'Vérification des modèles en cours…' : 'Choisir un modèle'}
+            title={testingModels ? t('checkingModels') : t('chooseModel')}
             style={{
               flex: 1,
               background: 'var(--color-surface)',
@@ -230,7 +232,7 @@ export function AiChat() {
           </select>
           {/* Status indicator dot */}
           {testingModels && (
-            <div title="Test des modèles en cours…" style={{
+            <div title={t('testingModels')} style={{
               width: '6px', height: '6px', borderRadius: '50%',
               background: 'var(--color-accent)', flexShrink: 0,
               animation: 'pulse 1s infinite',
@@ -260,7 +262,7 @@ export function AiChat() {
               e.target.style.height = Math.min(e.target.scrollHeight, 160) + 'px'
             }}
             onKeyDown={handleKeyDown}
-            placeholder="Ask your Java mentor..."
+            placeholder={t('chatPlaceholder')}
             disabled={isStreaming}
             rows={3}
             style={{
@@ -302,7 +304,7 @@ export function AiChat() {
           </button>
         </div>
         <div style={{ fontSize: '10px', color: 'var(--color-text-dim)', marginTop: '4px', textAlign: 'center' }}>
-          Context-aware: AI sees your current file
+          {t('contextAware')}
         </div>
       </div>
     </div>
@@ -386,6 +388,7 @@ function ThinkingDots() {
 }
 
 function WelcomeMessage() {
+  const { t } = useLangStore()
   return (
     <div style={{
       textAlign: 'center',
@@ -394,12 +397,12 @@ function WelcomeMessage() {
     }}>
       <div style={{ fontSize: '32px', marginBottom: '12px' }}>✦</div>
       <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-accent)', marginBottom: '8px' }}>
-        Java AI Mentor
+        {t('mentorTitle')}
       </div>
       <div style={{ fontSize: '12px', lineHeight: 1.7, color: 'var(--color-text-dim)' }}>
-        Ask me anything about Java.<br />
-        I can see your current code and<br />
-        adapt explanations to your level.
+        {t('mentorDesc1')}<br />
+        {t('mentorDesc2')}<br />
+        {t('mentorDesc3')}
       </div>
     </div>
   )

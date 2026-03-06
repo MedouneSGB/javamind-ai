@@ -19,6 +19,9 @@ interface LearningStore {
   updateStreak: () => void
   markKataCompleted: () => void
   getTotalScore: () => number
+  // Bulk setters for Supabase sync
+  setMasteredConcepts: (concepts: string[]) => void
+  setChallengeHistory: (history: ChallengeResult[]) => void
 }
 
 export const useLearningStore = create<LearningStore>()(
@@ -62,6 +65,9 @@ export const useLearningStore = create<LearningStore>()(
       },
 
       markKataCompleted: () => set({ kataCompletedToday: true }),
+
+      setMasteredConcepts: (concepts) => set({ masteredConcepts: concepts }),
+      setChallengeHistory: (history) => set({ challengeHistory: history }),
 
       getTotalScore: () => {
         const { challengeHistory } = get()
