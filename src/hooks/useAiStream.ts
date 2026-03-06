@@ -6,7 +6,7 @@ import { useLearningStore } from '../store/learningStore'
 import type { AiStreamPayload } from '../types/ai.types'
 
 export function useAiStream() {
-  const { startStream, appendStreamChunk, endStream, aiModel } = useAiStore()
+  const { startStream, appendStreamChunk, endStream, aiModel, aiProvider } = useAiStore()
   const { getActiveTab } = useEditorStore()
   const { userLevel, currentTopic, masteredConcepts } = useLearningStore()
   const unsubChunk = useRef<(() => void) | null>(null)
@@ -47,9 +47,11 @@ export function useAiStream() {
         buffer += chunk
         appendStreamChunk(chunk)
         onChunk?.(chunk)
+        console.log('[AI] chunk received, buffer length:', buffer.length)
       })
 
       unsubDone.current = ipc.ai.onDone(() => {
+        console.log('[AI] done, buffer:', buffer.substring(0, 100))
         const content = endStream()
         cleanup()
         onDone?.(content)
@@ -57,16 +59,20 @@ export function useAiStream() {
       })
 
       unsubError.current = ipc.ai.onError((error) => {
+        console.error('[AI] error:', error)
         const errContent = `Error: ${error}`
         appendStreamChunk(errContent)
+        buffer += errContent
         endStream()
         cleanup()
         resolve(buffer)
       })
 
-      ipc.ai.stream({ ...payload, model: payload.model || aiModel })
+      const provider = payload.provider || aiProvider
+      const model = payload.model || aiModel
+      ipc.ai.stream({ ...payload, model, provider })
     })
-  }, [cleanup, startStream, appendStreamChunk, endStream, aiModel])
+  }, [cleanup, startStream, appendStreamChunk, endStream, aiModel, aiProvider])
 
   return { stream, getContext }
 }

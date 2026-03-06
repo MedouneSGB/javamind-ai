@@ -39,6 +39,21 @@ export function TitleBar() {
 
       {/* Right controls */}
       <div style={{ display: 'flex', alignItems: 'center', WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+        {/* Refresh (dev) */}
+        <button
+          onClick={() => window.location.reload()}
+          title="Reload app (Ctrl+R)"
+          style={{
+            width: '46px', height: '36px',
+            background: 'transparent', border: 'none',
+            color: 'var(--color-text-muted)', fontSize: '15px',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'background 0.1s, color 0.1s',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-surface)'; e.currentTarget.style.color = 'var(--color-accent)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-text-muted)' }}
+        >↻</button>
+
         {/* Theme toggle */}
         <button
           onClick={toggleTheme}

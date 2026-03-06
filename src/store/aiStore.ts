@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import type { AiMode, AiMessage, Challenge, InterviewSession } from '../types/ai.types'
 
+export type AiProvider = 'anthropic' | 'gemini' | 'openai'
+
 interface AiStore {
   activeMode: AiMode
   isPanelOpen: boolean
@@ -10,7 +12,8 @@ interface AiStore {
   currentChallenge: Challenge | null
   challengeStartTime: number | null
   interviewSession: InterviewSession | null
-  aiModel: 'claude-sonnet-4-6' | 'claude-opus-4-6'
+  aiModel: string
+  aiProvider: AiProvider
 
   setMode: (mode: AiMode) => void
   togglePanel: () => void
@@ -22,7 +25,8 @@ interface AiStore {
   setChallenge: (challenge: Challenge | null) => void
   startChallenge: (challenge: Challenge) => void
   setInterviewSession: (session: InterviewSession | null) => void
-  setAiModel: (model: 'claude-sonnet-4-6' | 'claude-opus-4-6') => void
+  setAiModel: (model: string) => void
+  setAiProvider: (provider: AiProvider) => void
   clearChatHistory: () => void
 }
 
@@ -36,6 +40,7 @@ export const useAiStore = create<AiStore>()((set, get) => ({
   challengeStartTime: null,
   interviewSession: null,
   aiModel: 'claude-sonnet-4-6',
+  aiProvider: 'gemini',
 
   setMode: (mode) => set({ activeMode: mode }),
   togglePanel: () => set(state => ({ isPanelOpen: !state.isPanelOpen })),
@@ -69,6 +74,7 @@ export const useAiStore = create<AiStore>()((set, get) => ({
   setInterviewSession: (session) => set({ interviewSession: session }),
 
   setAiModel: (model) => set({ aiModel: model }),
+  setAiProvider: (provider) => set({ aiProvider: provider }),
 
   clearChatHistory: () => set({ chatHistory: [] }),
 }))
