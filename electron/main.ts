@@ -428,29 +428,81 @@ ipcMain.handle('ai:getModels', async (_, provider: 'anthropic' | 'gemini' | 'ope
           return rank(a.id) - rank(b.id) || a.label.localeCompare(b.label)
         })
     } else if (provider === 'openai') {
-      return [
-        { id: 'o3', label: 'o3' },
-        { id: 'o3-mini', label: 'o3 mini' },
-        { id: 'o1', label: 'o1' },
-        { id: 'o1-mini', label: 'o1 mini' },
-        { id: 'gpt-4.1', label: 'GPT-4.1' },
-        { id: 'gpt-4.1-mini', label: 'GPT-4.1 mini' },
-        { id: 'gpt-4o', label: 'GPT-4o' },
-        { id: 'gpt-4o-mini', label: 'GPT-4o mini' },
-      ]
+      const apiKey = process.env.OPENAI_API_KEY
+      if (!apiKey) return []
+      // Fetch models dynamically from OpenAI REST API
+      const https = require('https')
+      const data: any = await new Promise((resolve, reject) => {
+        const options = {
+          hostname: 'api.openai.com',
+          path: '/v1/models',
+          headers: { Authorization: `Bearer ${apiKey}` },
+        }
+        https.get(options, (res: any) => {
+          let body = ''
+          res.on('data', (chunk: any) => { body += chunk })
+          res.on('end', () => {
+            try { resolve(JSON.parse(body)) } catch (e) { reject(e) }
+          })
+        }).on('error', reject)
+      })
+      if (!data.data) {
+        console.error('[ai:getModels] OpenAI API error:', JSON.stringify(data))
+        return []
+      }
+      // Keep only GPT and o-series models relevant for chat
+      const allowed = ['gpt-4o', 'gpt-4.1', 'gpt-4-turbo', 'gpt-3.5', 'o1', 'o3']
+      return (data.data as any[])
+        .filter((m: any) => allowed.some(prefix => m.id.startsWith(prefix)))
+        .map((m: any) => ({ id: m.id, label: m.id }))
+        .sort((a: any, b: any) => {
+          // Sort: o3 > o1 > gpt-4.1 > gpt-4o > gpt-4-turbo > gpt-3.5
+          const rank = (id: string) => {
+            if (id.startsWith('o3')) return 0
+            if (id.startsWith('o1')) return 1
+            if (id.startsWith('gpt-4.1')) return 2
+            if (id.startsWith('gpt-4o')) return 3
+            if (id.startsWith('gpt-4-turbo')) return 4
+            return 5
+          }
+          return rank(a.id) - rank(b.id) || a.id.localeCompare(b.id)
+        })
     } else {
-      // Anthropic: return known models (API requires credits to call models.list())
-      return [
-        { id: 'claude-opus-4-5', label: 'Claude Opus 4.5' },
-        { id: 'claude-sonnet-4-5', label: 'Claude Sonnet 4.5' },
-        { id: 'claude-haiku-4-5', label: 'Claude Haiku 4.5' },
-        { id: 'claude-opus-4-6', label: 'Claude Opus 4.6' },
-        { id: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6' },
-        { id: 'claude-haiku-4-6', label: 'Claude Haiku 4.6' },
-        { id: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet' },
-        { id: 'claude-3-5-haiku-20241022', label: 'Claude 3.5 Haiku' },
-        { id: 'claude-3-opus-20240229', label: 'Claude 3 Opus' },
-      ]
+      // Anthropic: fetch models via API (works with valid key, no credits needed)
+      const apiKey = process.env.ANTHROPIC_API_KEY
+      if (!apiKey) return []
+      const https = require('https')
+      const data: any = await new Promise((resolve, reject) => {
+        const options = {
+          hostname: 'api.anthropic.com',
+          path: '/v1/models',
+          headers: {
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+          },
+        }
+        https.get(options, (res: any) => {
+          let body = ''
+          res.on('data', (chunk: any) => { body += chunk })
+          res.on('end', () => {
+            try { resolve(JSON.parse(body)) } catch (e) { reject(e) }
+          })
+        }).on('error', reject)
+      })
+      if (!data.data) {
+        console.error('[ai:getModels] Anthropic API error:', JSON.stringify(data))
+        // Fallback to known models if API fails
+        return [
+          { id: 'claude-opus-4-6', label: 'Claude Opus 4.6' },
+          { id: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6' },
+          { id: 'claude-haiku-4-6', label: 'Claude Haiku 4.6' },
+          { id: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet' },
+          { id: 'claude-3-5-haiku-20241022', label: 'Claude 3.5 Haiku' },
+        ]
+      }
+      return (data.data as any[])
+        .map((m: any) => ({ id: m.id, label: m.display_name || m.id }))
+        .sort((a: any, b: any) => a.label.localeCompare(b.label))
     }
   } catch (err: any) {
     console.error('[ai:getModels] error:', err.message)
