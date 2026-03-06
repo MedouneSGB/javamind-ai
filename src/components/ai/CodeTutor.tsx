@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAiStream } from '../../hooks/useAiStream'
 import { useAiStore } from '../../store/aiStore'
-import { BookOpen, Sparkles, Loader2 } from 'lucide-react'
+import { BookOpen } from 'lucide-react'
 import { SYSTEM_PROMPTS } from '../../lib/prompt-templates'
 import { StreamingText } from './StreamingText'
 

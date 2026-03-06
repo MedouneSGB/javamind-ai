@@ -3,7 +3,7 @@ import { useProjectStore } from '../../store/projectStore'
 import { useAiStore } from '../../store/aiStore'
 import { ipc } from '../../lib/ipc'
 import { useEditorStore } from '../../store/editorStore'
-import { FolderOpen, FileText, Play, Square, Loader2, Sparkles, Search, Target, MessageCircle, PanelRightClose, PanelRightOpen } from 'lucide-react'
+import { FolderOpen, FileText, Play, Square, Loader2, Search, Target, MessageCircle, PanelRightClose, PanelRightOpen } from 'lucide-react'
 
 export function Toolbar() {
   const { run, stop, isCompiling, isRunning } = useJavaRunner()

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { useLearningStore } from '../../store/learningStore'
 import { Lock, Circle, CircleDot, CheckCircle2 } from 'lucide-react'
 import { useAiStore } from '../../store/aiStore'
@@ -106,7 +107,7 @@ function ConceptNode({ title, status, isCurrent, onClick }: {
   isCurrent: boolean
   onClick: () => void
 }) {
-  const icons: Record<ConceptStatus, string> = {
+  const icons: Record<ConceptStatus, ReactNode> = {
     locked: <Lock size={11}/>,
     available: <Circle size={11}/>,
     'in-progress': <CircleDot size={11}/>,

@@ -51,7 +51,6 @@ function WelcomeScreen() {
         background: 'var(--color-surface)',
         borderRadius: '16px',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        display:'flex', alignItems:'center', justifyContent:'center',
         border: '1px solid var(--color-border)',
       }}>
         <Coffee size={32}/>
@@ -63,7 +62,7 @@ function WelcomeScreen() {
         <div style={{ fontSize: '13px', lineHeight: 1.8 }}>
           <FolderOpen size={13}/> Open a project with <Key>Ctrl+Shift+O</Key><br />
           <FileText size={13}/> Or open a file with <Key>Ctrl+O</Key><br />
-          ✦ Ask the AI mentor anything with <Key>Ctrl+Shift+A</Key>
+          <Sparkles size={13}/> Ask the AI mentor anything with <Key>Ctrl+Shift+A</Key>
         </div>
       </div>
     </div>

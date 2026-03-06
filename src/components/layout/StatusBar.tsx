@@ -1,5 +1,5 @@
 import { useProjectStore } from '../../store/projectStore'
-import { FolderOpen, Zap, Play, XCircle, Sparkles, CheckCircle2, Circle, Flame } from 'lucide-react'
+import { FolderOpen, Zap, Play, XCircle, CheckCircle2, Circle, Flame } from 'lucide-react'
 import { useLearningStore } from '../../store/learningStore'
 import { useAiStore } from '../../store/aiStore'
 
