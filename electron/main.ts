@@ -172,11 +172,15 @@ ipcMain.handle('java:compile', async (event, { projectPath }: { projectPath: str
   // Ensure out dir exists
   if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true })
 
-  // Collect ALL .java files recursively, excluding out/ and .class-only dirs
+  // Collect ALL .java files recursively, excluding out/ dir (by absolute path)
+  const outDirNorm = path.normalize(outDir) + path.sep
   const allJavaFiles = collectJavaFiles(projectPath).filter(f => {
-    const rel = path.relative(projectPath, f)
-    // Exclude anything inside out/ or hidden dirs
-    return !rel.startsWith('out' + path.sep) && !rel.startsWith('.')
+    const norm = path.normalize(f)
+    // Exclude anything inside the out/ directory or hidden dirs
+    if (norm.startsWith(outDirNorm)) return false
+    const rel = path.relative(projectPath, norm)
+    if (rel.startsWith('.')) return false
+    return true
   })
 
   if (allJavaFiles.length === 0) {
