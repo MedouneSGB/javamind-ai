@@ -2,11 +2,13 @@ import { useProjectStore } from '../../store/projectStore'
 import { FolderOpen, Zap, Play, XCircle, CheckCircle2, Circle, Flame, Sparkles } from 'lucide-react'
 import { useLearningStore } from '../../store/learningStore'
 import { useAiStore } from '../../store/aiStore'
+import { useLangStore } from '../../store/langStore'
 
 export function StatusBar() {
   const { projectPath, isCompiling, isRunning, errors } = useProjectStore()
   const { userLevel, dailyStreak, masteredConcepts, kataCompletedToday } = useLearningStore()
   const { isStreaming } = useAiStore()
+  const { t } = useLangStore()
 
   const projectName = projectPath ? projectPath.split(/[\\/]/).pop() : null
 
@@ -36,32 +38,32 @@ export function StatusBar() {
         <StatusItem>Java 21 LTS</StatusItem>
 
         {/* Run status */}
-        {isCompiling && <StatusItem color="var(--color-warning)" pulse><Zap size={11}/> Compiling...</StatusItem>}
-        {isRunning && <StatusItem color="var(--color-success)" pulse><Play size={11} fill='currentColor'/> Running</StatusItem>}
+        {isCompiling && <StatusItem color="var(--color-warning)" pulse><Zap size={11}/> {t('compiling')}</StatusItem>}
+        {isRunning && <StatusItem color="var(--color-success)" pulse><Play size={11} fill='currentColor'/> {t('running')}</StatusItem>}
         {errors.length > 0 && !isCompiling && (
-          <StatusItem color="var(--color-error)"><XCircle size={11}/> {errors.length} error(s)</StatusItem>
+          <StatusItem color="var(--color-error)"><XCircle size={11}/> {errors.length} {t('errors')}</StatusItem>
         )}
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         {/* AI streaming */}
         {isStreaming && (
-          <StatusItem color="var(--color-accent)" pulse><Sparkles size={11}/> AI thinking...</StatusItem>
+          <StatusItem color="var(--color-accent)" pulse><Sparkles size={11}/> {t('aiThinking')}</StatusItem>
         )}
 
         {/* Daily kata */}
         <StatusItem color={kataCompletedToday ? 'var(--color-success)' : 'var(--color-text-dim)'}>
-          {kataCompletedToday ? <CheckCircle2 size={11}/> : <Circle size={11}/>} Daily Kata
+          {kataCompletedToday ? <CheckCircle2 size={11}/> : <Circle size={11}/>} {t('dailyKata')}
         </StatusItem>
 
         {/* Streak */}
         {dailyStreak > 0 && (
-          <StatusItem color="var(--color-warning)"><Flame size={11}/> {dailyStreak} day streak</StatusItem>
+          <StatusItem color="var(--color-warning)"><Flame size={11}/> {dailyStreak} {t('dayStreak')}</StatusItem>
         )}
 
         {/* Progress */}
         <StatusItem>
-          {masteredConcepts.length} concepts mastered
+          {masteredConcepts.length} {t('conceptsMastered')}
         </StatusItem>
 
         {/* Level */}

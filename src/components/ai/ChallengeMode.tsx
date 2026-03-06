@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAiStream } from '../../hooks/useAiStream'
 import { useAiStore } from '../../store/aiStore'
 import { useLearningStore } from '../../store/learningStore'
+import { useLangStore } from '../../store/langStore'
 import { SYSTEM_PROMPTS } from '../../lib/prompt-templates'
 import { CURRICULUM } from '../../lib/learning-curriculum'
 import { StreamingText } from './StreamingText'
@@ -11,6 +12,7 @@ export function ChallengeMode() {
   const { stream, getContext } = useAiStream()
   const { isStreaming, currentStreamContent, currentChallenge, startChallenge, challengeStartTime } = useAiStore()
   const { userLevel, currentTopic, masteredConcepts, recordChallengeResult, markConceptMastered } = useLearningStore()
+  const { t } = useLangStore()
   const [hintsRevealed, setHintsRevealed] = useState(0)
   const [elapsed, setElapsed] = useState(0)
   const [phase, setPhase] = useState<'idle' | 'generating' | 'active' | 'evaluating' | 'result'>('idle')
@@ -113,11 +115,10 @@ export function ChallengeMode() {
     return (
       <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
         <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-accent)' }}>
-          🎯 Challenge Mode
+          {t('challengeTitle')}
         </div>
         <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', lineHeight: 1.6 }}>
-          AI generates a Java challenge adapted to your level and current topic.
-          Solve it in the editor, then submit for evaluation.
+          {t('challengeDesc')}
         </div>
         {currentTopic && (
           <div style={{
@@ -128,7 +129,7 @@ export function ChallengeMode() {
             fontSize: '12px',
             color: 'var(--color-accent)',
           }}>
-            Topic: {getTopicName()}
+            {t('topicLabel')} {getTopicName()}
           </div>
         )}
         <button
@@ -144,7 +145,7 @@ export function ChallengeMode() {
             cursor: 'pointer',
           }}
         >
-          🎯 Generate Challenge
+          {t('generateChallenge')}
         </button>
       </div>
     )
@@ -154,7 +155,7 @@ export function ChallengeMode() {
     return (
       <div style={{ padding: '12px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
         <div style={{ fontSize: '24px', marginBottom: '8px', animation: 'pulse 1s infinite' }}>🎯</div>
-        <div style={{ fontSize: '13px' }}>Generating your challenge...</div>
+        <div style={{ fontSize: '13px' }}>{t('generatingChallenge')}</div>
         {isStreaming && currentStreamContent && (
           <div style={{ marginTop: '12px', textAlign: 'left' }}>
             <StreamingText content={currentStreamContent} isStreaming />
@@ -194,7 +195,7 @@ export function ChallengeMode() {
         {/* Requirements */}
         <div style={{ marginBottom: '10px' }}>
           <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-accent)', marginBottom: '4px' }}>
-            REQUIREMENTS
+            {t('requirements')}
           </div>
           {currentChallenge.requirements.map((req, i) => (
             <div key={i} style={{ fontSize: '12px', color: 'var(--color-text-muted)', padding: '2px 0 2px 10px' }}>
@@ -206,7 +207,7 @@ export function ChallengeMode() {
         {/* Examples */}
         <div style={{ marginBottom: '10px' }}>
           <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-accent)', marginBottom: '4px' }}>
-            EXAMPLES
+            {t('examples')}
           </div>
           {currentChallenge.examples.map((ex, i) => (
             <div key={i} style={{
@@ -250,7 +251,7 @@ export function ChallengeMode() {
                 width: '100%',
               }}
             >
-              💡 Reveal hint ({hintsRevealed}/{currentChallenge.hints.length})
+              {t('revealHint')} ({hintsRevealed}/{currentChallenge.hints.length})
             </button>
           )}
         </div>
@@ -270,7 +271,7 @@ export function ChallengeMode() {
             marginTop: 'auto',
           }}
         >
-          ✓ Submit Solution
+          {t('submitSolution')}
         </button>
       </div>
     )
@@ -280,7 +281,7 @@ export function ChallengeMode() {
     return (
       <div style={{ padding: '12px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
         <div style={{ fontSize: '24px', marginBottom: '8px', animation: 'pulse 1s infinite' }}>🔍</div>
-        <div style={{ fontSize: '13px' }}>Evaluating your solution...</div>
+        <div style={{ fontSize: '13px' }}>{t('evaluating')}</div>
         {isStreaming && currentStreamContent && (
           <div style={{ marginTop: '12px', textAlign: 'left' }}>
             <StreamingText content={currentStreamContent} isStreaming />
@@ -294,7 +295,7 @@ export function ChallengeMode() {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '12px', overflow: 'auto' }}>
         <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-accent)', marginBottom: '10px' }}>
-          📊 Evaluation Results
+          {t('evalResults')}
         </div>
         <div style={{ flex: 1, overflow: 'auto', marginBottom: '10px' }}>
           <StreamingText content={evalResult} />
@@ -311,7 +312,7 @@ export function ChallengeMode() {
             cursor: 'pointer',
           }}
         >
-          🎯 New Challenge
+          {t('newChallenge')}
         </button>
       </div>
     )

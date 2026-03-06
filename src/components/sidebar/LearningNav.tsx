@@ -2,12 +2,14 @@ import type { ReactNode } from 'react'
 import { useLearningStore } from '../../store/learningStore'
 import { Lock, Circle, CircleDot, CheckCircle2 } from 'lucide-react'
 import { useAiStore } from '../../store/aiStore'
+import { useLangStore } from '../../store/langStore'
 import { CURRICULUM, getAvailableConcepts } from '../../lib/learning-curriculum'
 import type { ConceptStatus } from '../../types/learning.types'
 
 export function LearningNav() {
   const { masteredConcepts, currentTopic, setCurrentTopic } = useLearningStore()
   const { setMode, setPanelOpen } = useAiStore()
+  const { t } = useLangStore()
 
   const available = getAvailableConcepts(masteredConcepts)
 
@@ -38,7 +40,7 @@ export function LearningNav() {
           fontSize: '10px', color: 'var(--color-text-muted)',
           marginBottom: '5px',
         }}>
-          <span>Overall Progress</span>
+          <span>{t('overallProgress')}</span>
           <span style={{ color: 'var(--color-accent)' }}>{progress}%</span>
         </div>
         <div style={{
@@ -54,7 +56,7 @@ export function LearningNav() {
           }} />
         </div>
         <div style={{ fontSize: '10px', color: 'var(--color-text-dim)', marginTop: '4px' }}>
-          {masteredConcepts.length} / {total} concepts
+          {masteredConcepts.length} / {total} {t('concepts')}
         </div>
       </div>
 
