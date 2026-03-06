@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { TitleBar } from './TitleBar'
 import { Toolbar } from './Toolbar'
 import { StatusBar } from './StatusBar'
@@ -7,12 +7,59 @@ import { EditorPane } from '../editor/EditorPane'
 import { TerminalPane } from '../terminal/TerminalPane'
 import { AiPanel } from '../ai/AiPanel'
 import { useAiStore } from '../../store/aiStore'
+import { useAuthStore } from '../../store/authStore'
+import { useRecentProjectsStore } from '../../store/recentProjectsStore'
+import { useProjectStore } from '../../store/projectStore'
+import { useEditorStore } from '../../store/editorStore'
+import { useSyncOnChange } from '../../hooks/useSyncOnChange'
+import { pullFromSupabase } from '../../lib/sync'
+import { ipc } from '../../lib/ipc'
+import * as pathBrowser from 'path-browserify'
 
 export function AppShell() {
   const { isPanelOpen } = useAiStore()
   const [sidebarWidth, setSidebarWidth] = useState(220)
   const [aiWidth, setAiWidth] = useState(320)
   const [terminalHeight, setTerminalHeight] = useState(200)
+
+  const { handleDeepLink, session, fetchProfile } = useAuthStore()
+  const { projects, addRecentProject } = useRecentProjectsStore()
+  const { setProjectPath, setFileTree } = useProjectStore()
+  const { closeAllTabs } = useEditorStore()
+
+  // Sync on store changes
+  useSyncOnChange()
+
+  // Listen for OAuth deep links from the main process
+  useEffect(() => {
+    return ipc.auth.onDeepLink((url) => {
+      handleDeepLink(url)
+    })
+  }, [handleDeepLink])
+
+  // When session becomes available, pull data from Supabase
+  useEffect(() => {
+    if (session) {
+      fetchProfile().then(() => pullFromSupabase())
+    }
+  }, [session?.access_token])
+
+  // Auto-reopen last project on startup
+  useEffect(() => {
+    const last = projects[0]
+    if (!last) return
+    ipc.fs.exists(last.path).then((exists) => {
+      if (!exists) return
+      closeAllTabs()
+      setProjectPath(last.path)
+      ipc.fs.readDir(last.path).then((tree) => {
+        setFileTree(tree)
+        addRecentProject(last.path, pathBrowser.basename(last.path))
+      })
+    })
+  // Run once on mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <div style={{

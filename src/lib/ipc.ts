@@ -71,4 +71,14 @@ export const ipc = {
     setApiKey: (key: string): Promise<boolean> =>
       window.electronAPI.invoke('settings:setApiKey', key) as Promise<boolean>,
   },
+
+  shell: {
+    openExternal: (url: string): Promise<void> =>
+      window.electronAPI.invoke('shell:openExternal', url) as Promise<void>,
+  },
+
+  auth: {
+    onDeepLink: (cb: (url: string) => void) =>
+      window.electronAPI.on('auth:deeplink', (url) => cb(url as string)),
+  },
 }

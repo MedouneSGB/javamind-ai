@@ -117,6 +117,18 @@ export const LABELS: Record<Lang, Record<string, string>> = {
     openProjectWith: 'Ouvrir un projet avec',
     orOpenFileWith: 'Ou ouvrir un fichier avec',
     askMentor: 'Demander au mentor IA avec',
+
+    // Auth / Account
+    authSignIn: 'Connexion',
+    authSignInDesc: 'Connectez-vous pour synchroniser votre progression, vos préférences et vos projets récents dans le cloud.',
+    authNoSupabase: 'Supabase non configuré. Ajoutez VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY dans votre fichier .env.',
+    authSyncing: 'Synchronisation...',
+    authSynced: 'Synchronisé',
+    authSyncNow: 'Sync maintenant',
+    authSignOut: 'Déconnexion',
+
+    // Recent projects
+    recentProjects: 'Projets récents',
   },
   en: {
     // Toolbar
@@ -231,6 +243,18 @@ export const LABELS: Record<Lang, Record<string, string>> = {
     openProjectWith: 'Open a project with',
     orOpenFileWith: 'Or open a file with',
     askMentor: 'Ask the AI mentor anything with',
+
+    // Auth / Account
+    authSignIn: 'Sign In',
+    authSignInDesc: 'Sign in to sync your learning progress, preferences, and recent projects to the cloud.',
+    authNoSupabase: 'Supabase not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your .env file.',
+    authSyncing: 'Syncing...',
+    authSynced: 'Synced',
+    authSyncNow: 'Sync now',
+    authSignOut: 'Sign out',
+
+    // Recent projects
+    recentProjects: 'Recent projects',
   },
 }
 
