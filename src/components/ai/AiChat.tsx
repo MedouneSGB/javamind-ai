@@ -1,62 +1,77 @@
 import { useState, useRef, useEffect } from 'react'
 import { useAiStream } from '../../hooks/useAiStream'
-import { useAiStore, type AiProvider } from '../../store/aiStore'
+import { useAiStore, type AiProvider, type ModelEntry } from '../../store/aiStore'
 import { ipc } from '../../lib/ipc'
 import { SYSTEM_PROMPTS } from '../../lib/prompt-templates'
 import { StreamingText } from './StreamingText'
 import type { AiMessage } from '../../types/ai.types'
 
-const DEFAULT_MODELS: Record<AiProvider, { id: string; label: string }[]> = {
+const DEFAULT_MODELS: Record<AiProvider, ModelEntry[]> = {
   gemini: [{ id: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' }],
-  anthropic: [{ id: 'claude-sonnet-4-6', label: 'Claude Sonnet' }],
+  anthropic: [{ id: 'claude-sonnet-4-5', label: 'Claude Sonnet 4.5' }],
   openai: [{ id: 'gpt-4o', label: 'GPT-4o' }],
 }
 
 export function AiChat() {
   const [input, setInput] = useState('')
-  const [models, setModels] = useState<{ id: string; label: string }[]>([])
   const [loadingModels, setLoadingModels] = useState(false)
-  const [modelStatus, setModelStatus] = useState<Record<string, boolean | null>>({})
   const [testingModels, setTestingModels] = useState(false)
   const { stream, getContext } = useAiStream()
-  const { chatHistory, addMessage, isStreaming, currentStreamContent, clearChatHistory, aiProvider, setAiProvider, aiModel, setAiModel } = useAiStore()
+  const {
+    chatHistory, addMessage, isStreaming, currentStreamContent, clearChatHistory,
+    aiProvider, setAiProvider, aiModel, setAiModel,
+    getModelCache, setModelCache, updateModelStatus, isCacheValid,
+  } = useAiStore()
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Derive models + status from store cache
+  const cache = getModelCache(aiProvider)
+  const models: ModelEntry[] = cache?.models ?? DEFAULT_MODELS[aiProvider]
+  const modelStatus: Record<string, boolean | null> = cache?.status ?? {}
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [chatHistory, currentStreamContent])
 
   useEffect(() => {
-    // Show defaults immediately, then load from API
-    setModels(DEFAULT_MODELS[aiProvider])
-    setAiModel(DEFAULT_MODELS[aiProvider][0].id)
-    setModelStatus({})
+    // If cache is still valid, use it immediately — no fetch needed
+    if (isCacheValid(aiProvider)) {
+      // Ensure selected model is in the list
+      const cached = getModelCache(aiProvider)!
+      const exists = cached.models.some(m => m.id === aiModel)
+      if (!exists) setAiModel(cached.models[0].id)
+      return
+    }
+
+    // Cache is stale or missing — fetch from API
     setLoadingModels(true)
     ipc.ai.getModels(aiProvider).then((result) => {
       const list = result && result.length > 0 ? result : DEFAULT_MODELS[aiProvider]
-      setModels(list)
-      setAiModel(list[0].id)
+      setModelCache(aiProvider, list) // marks all as null (pending)
+
+      // Keep current model if it's in the new list, otherwise reset to first
+      const currentInList = list.some(m => m.id === aiModel)
+      if (!currentInList) setAiModel(list[0].id)
+
       setLoadingModels(false)
 
-      // After list is loaded, silently test each model in parallel
+      // Silently test all models in parallel
       setTestingModels(true)
-      // Mark all as null (pending) first
-      const pending: Record<string, boolean | null> = {}
-      list.forEach(m => { pending[m.id] = null })
-      setModelStatus(pending)
-
       ipc.ai.testModels(aiProvider, list.map(m => m.id)).then((results) => {
-        setModelStatus(results)
+        updateModelStatus(aiProvider, results)
         setTestingModels(false)
-        // If current model failed, switch to first available
-        const currentOk = results[list[0].id]
+        // Auto-switch if current model is unavailable
+        const currentOk = results[aiModel]
         if (currentOk === false) {
           const firstOk = list.find(m => results[m.id] === true)
           if (firstOk) setAiModel(firstOk.id)
         }
       }).catch(() => setTestingModels(false))
-    }).catch(() => setLoadingModels(false))
+    }).catch(() => {
+      setModelCache(aiProvider, DEFAULT_MODELS[aiProvider])
+      setLoadingModels(false)
+    })
   }, [aiProvider])
 
   const handleSend = async () => {

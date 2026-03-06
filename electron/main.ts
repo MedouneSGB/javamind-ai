@@ -363,7 +363,7 @@ ipcMain.handle('ai:stream', async (event, payload: {
       const Anthropic = require('@anthropic-ai/sdk')
       const client = new Anthropic.default({ apiKey })
       const stream = await client.messages.stream({
-        model: payload.model || 'claude-sonnet-4-6',
+        model: payload.model || 'claude-sonnet-4-5',
         max_tokens: 4096,
         system: payload.systemPrompt,
         messages: payload.messages,
@@ -491,13 +491,14 @@ ipcMain.handle('ai:getModels', async (_, provider: 'anthropic' | 'gemini' | 'ope
       })
       if (!data.data) {
         console.error('[ai:getModels] Anthropic API error:', JSON.stringify(data))
-        // Fallback to known models if API fails
+        // Fallback to known real model IDs if API fails
         return [
-          { id: 'claude-opus-4-6', label: 'Claude Opus 4.6' },
-          { id: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6' },
-          { id: 'claude-haiku-4-6', label: 'Claude Haiku 4.6' },
+          { id: 'claude-opus-4-5', label: 'Claude Opus 4.5' },
+          { id: 'claude-sonnet-4-5', label: 'Claude Sonnet 4.5' },
+          { id: 'claude-haiku-4-5', label: 'Claude Haiku 4.5' },
           { id: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet' },
           { id: 'claude-3-5-haiku-20241022', label: 'Claude 3.5 Haiku' },
+          { id: 'claude-3-opus-20240229', label: 'Claude 3 Opus' },
         ]
       }
       return (data.data as any[])

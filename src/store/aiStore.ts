@@ -3,6 +3,36 @@ import type { AiMode, AiMessage, Challenge, InterviewSession } from '../types/ai
 
 export type AiProvider = 'anthropic' | 'gemini' | 'openai'
 
+export interface ModelEntry {
+  id: string
+  label: string
+}
+
+interface ModelCache {
+  models: ModelEntry[]
+  status: Record<string, boolean | null>
+  fetchedAt: number // timestamp
+}
+
+const CACHE_TTL = 5 * 60 * 1000 // 5 minutes before refreshing
+
+// localStorage keys
+const LS_PROVIDER = 'javamind:aiProvider'
+const LS_MODEL = 'javamind:aiModel'
+const LS_MODEL_CACHE = 'javamind:modelCache'
+
+function loadFromStorage<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key)
+    if (raw) return JSON.parse(raw) as T
+  } catch { /* ignore */ }
+  return fallback
+}
+
+function saveToStorage(key: string, value: unknown) {
+  try { localStorage.setItem(key, JSON.stringify(value)) } catch { /* ignore */ }
+}
+
 interface AiStore {
   activeMode: AiMode
   isPanelOpen: boolean
@@ -12,8 +42,13 @@ interface AiStore {
   currentChallenge: Challenge | null
   challengeStartTime: number | null
   interviewSession: InterviewSession | null
+
+  // Persisted
   aiModel: string
   aiProvider: AiProvider
+
+  // Model cache per provider (not persisted between restarts — refreshes after TTL)
+  modelCache: Partial<Record<AiProvider, ModelCache>>
 
   setMode: (mode: AiMode) => void
   togglePanel: () => void
@@ -28,6 +63,12 @@ interface AiStore {
   setAiModel: (model: string) => void
   setAiProvider: (provider: AiProvider) => void
   clearChatHistory: () => void
+
+  // Cache helpers
+  getModelCache: (provider: AiProvider) => ModelCache | null
+  setModelCache: (provider: AiProvider, models: ModelEntry[], status?: Record<string, boolean | null>) => void
+  updateModelStatus: (provider: AiProvider, status: Record<string, boolean>) => void
+  isCacheValid: (provider: AiProvider) => boolean
 }
 
 export const useAiStore = create<AiStore>()((set, get) => ({
@@ -39,8 +80,13 @@ export const useAiStore = create<AiStore>()((set, get) => ({
   currentChallenge: null,
   challengeStartTime: null,
   interviewSession: null,
-  aiModel: 'claude-sonnet-4-6',
-  aiProvider: 'gemini',
+
+  // Restore from localStorage
+  aiProvider: loadFromStorage<AiProvider>(LS_PROVIDER, 'gemini'),
+  aiModel: loadFromStorage<string>(LS_MODEL, 'gemini-2.0-flash'),
+
+  // Restore model cache from localStorage (survives page reload, not app restart)
+  modelCache: loadFromStorage<Partial<Record<AiProvider, ModelCache>>>(LS_MODEL_CACHE, {}),
 
   setMode: (mode) => set({ activeMode: mode }),
   togglePanel: () => set(state => ({ isPanelOpen: !state.isPanelOpen })),
@@ -73,8 +119,42 @@ export const useAiStore = create<AiStore>()((set, get) => ({
 
   setInterviewSession: (session) => set({ interviewSession: session }),
 
-  setAiModel: (model) => set({ aiModel: model }),
-  setAiProvider: (provider) => set({ aiProvider: provider }),
+  setAiModel: (model) => {
+    saveToStorage(LS_MODEL, model)
+    set({ aiModel: model })
+  },
+
+  setAiProvider: (provider) => {
+    saveToStorage(LS_PROVIDER, provider)
+    set({ aiProvider: provider })
+  },
 
   clearChatHistory: () => set({ chatHistory: [] }),
+
+  // Cache helpers
+  getModelCache: (provider) => get().modelCache[provider] ?? null,
+
+  setModelCache: (provider, models, status = {}) => {
+    const pending: Record<string, boolean | null> = {}
+    models.forEach(m => { pending[m.id] = status[m.id] ?? null })
+    const cache: ModelCache = { models, status: pending, fetchedAt: Date.now() }
+    const modelCache = { ...get().modelCache, [provider]: cache }
+    saveToStorage(LS_MODEL_CACHE, modelCache)
+    set({ modelCache })
+  },
+
+  updateModelStatus: (provider, status) => {
+    const existing = get().modelCache[provider]
+    if (!existing) return
+    const updated: ModelCache = { ...existing, status: { ...existing.status, ...status } }
+    const modelCache = { ...get().modelCache, [provider]: updated }
+    saveToStorage(LS_MODEL_CACHE, modelCache)
+    set({ modelCache })
+  },
+
+  isCacheValid: (provider) => {
+    const cache = get().modelCache[provider]
+    if (!cache || cache.models.length === 0) return false
+    return Date.now() - cache.fetchedAt < CACHE_TTL
+  },
 }))
