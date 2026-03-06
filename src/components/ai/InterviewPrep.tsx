@@ -24,7 +24,6 @@ export function InterviewPrep() {
     const response = await stream({
       systemPrompt,
       messages: [{ role: 'user', content: 'Start the interview.' }],
-      model: 'claude-opus-4-6',
     })
     const aiMsg: AiMessage = {
       id: crypto.randomUUID(), role: 'assistant', content: response,
@@ -49,7 +48,6 @@ export function InterviewPrep() {
     const response = await stream({
       systemPrompt,
       messages: newMessages.map(m => ({ role: m.role, content: m.content })),
-      model: 'claude-opus-4-6',
     })
 
     const aiMsg: AiMessage = {
