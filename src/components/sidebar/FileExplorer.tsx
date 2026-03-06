@@ -218,7 +218,7 @@ function FileNode({ node, depth, creating, onOpenFile, onStartCreate, onConfirmC
   onConfirmCreate: (name: string) => void
   onCancelCreate: () => void
 }) {
-  const [expanded, setExpanded] = useState(depth === 0)
+  const [expanded, setExpanded] = useState(false)
   const [hovered, setHovered] = useState(false)
 
   const getIcon = () => {
