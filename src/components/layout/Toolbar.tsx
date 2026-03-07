@@ -6,8 +6,9 @@ import { useLangStore, type Lang } from '../../store/langStore'
 import { ipc } from '../../lib/ipc'
 import { useEditorStore } from '../../store/editorStore'
 import { useRecentProjectsStore } from '../../store/recentProjectsStore'
-import { FolderOpen, FileText, Play, Square, Loader2, Search, Target, MessageCircle, PanelRightClose, PanelRightOpen, Languages, ChevronDown, Clock } from 'lucide-react'
+import { FolderOpen, FileText, Play, Square, Loader2, Search, Target, MessageCircle, PanelRightClose, PanelRightOpen, Languages, ChevronDown, Clock, Cloud } from 'lucide-react'
 import * as pathBrowser from 'path-browserify'
+import { CloudProjectsModal } from '../cloud/CloudProjectsModal'
 
 export function Toolbar() {
   const { run, stop, isCompiling, isRunning } = useJavaRunner()
@@ -17,6 +18,7 @@ export function Toolbar() {
   const { lang, setLang, t } = useLangStore()
   const { projects, addRecentProject } = useRecentProjectsStore()
   const [showRecents, setShowRecents] = useState(false)
+  const [showCloud, setShowCloud] = useState(false)
 
   const handleOpenProject = async () => {
     const p = await ipc.fs.openProject()
@@ -47,6 +49,7 @@ export function Toolbar() {
   }
 
   return (
+    <>
     <div style={{
       height: '42px',
       background: 'var(--color-surface-2)',
@@ -128,6 +131,9 @@ export function Toolbar() {
         </div>
         <ToolBtn onClick={handleOpenFile} title="Open File">
           <FileText size={13}/> {t('file')}
+        </ToolBtn>
+        <ToolBtn onClick={() => setShowCloud(true)} title={t('cloudProjects')}>
+          <Cloud size={13}/> Cloud
         </ToolBtn>
       </ToolbarGroup>
 
@@ -223,6 +229,9 @@ export function Toolbar() {
         }
       </ToolBtn>
     </div>
+
+    {showCloud && <CloudProjectsModal onClose={() => setShowCloud(false)} />}
+    </>
   )
 }
 

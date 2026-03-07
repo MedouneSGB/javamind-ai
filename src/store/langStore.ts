@@ -129,6 +129,22 @@ export const LABELS: Record<Lang, Record<string, string>> = {
 
     // Recent projects
     recentProjects: 'Projets récents',
+
+    // Cloud projects
+    cloudProjects: 'Projets Cloud',
+    cloudSaveCurrent: 'Sauvegarder le projet actuel dans le cloud',
+    cloudProjectName: 'Nom du projet...',
+    cloudProjectDesc: 'Description (optionnel)...',
+    cloudSave: 'Sauvegarder',
+    cloudNoProjects: 'Aucun projet cloud. Sauvegardez votre projet pour commencer.',
+    cloudProjectsSaved: 'projet(s) sauvegardé(s)',
+    cloudFiles: 'fichier(s)',
+    cloudConfirmDelete: 'Supprimer ?',
+    cloudDelete: 'Supprimer du cloud',
+    cloudPush: 'Mettre à jour avec le projet local',
+    cancel: 'Annuler',
+    yes: 'Oui',
+    no: 'Non',
   },
   en: {
     // Toolbar
@@ -255,6 +271,22 @@ export const LABELS: Record<Lang, Record<string, string>> = {
 
     // Recent projects
     recentProjects: 'Recent projects',
+
+    // Cloud projects
+    cloudProjects: 'Cloud Projects',
+    cloudSaveCurrent: 'Save current project to cloud',
+    cloudProjectName: 'Project name...',
+    cloudProjectDesc: 'Description (optional)...',
+    cloudSave: 'Save',
+    cloudNoProjects: 'No cloud projects yet. Save your project to get started.',
+    cloudProjectsSaved: 'project(s) saved',
+    cloudFiles: 'file(s)',
+    cloudConfirmDelete: 'Delete?',
+    cloudDelete: 'Delete from cloud',
+    cloudPush: 'Update with local project',
+    cancel: 'Cancel',
+    yes: 'Yes',
+    no: 'No',
   },
 }
 
