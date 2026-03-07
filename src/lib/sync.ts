@@ -19,7 +19,7 @@ export async function pullFromSupabase(): Promise<void> {
     .from('learning_progress')
     .select('*')
     .eq('user_id', userId)
-    .single()
+    .maybeSingle()  // null (not 406) when no row yet
 
   if (lp) {
     const ls = useLearningStore.getState()
@@ -34,7 +34,7 @@ export async function pullFromSupabase(): Promise<void> {
     .from('user_preferences')
     .select('*')
     .eq('user_id', userId)
-    .single()
+    .maybeSingle()  // null (not 406) when no row yet
 
   if (prefs) {
     if (prefs.theme) useThemeStore.getState().setTheme(prefs.theme)

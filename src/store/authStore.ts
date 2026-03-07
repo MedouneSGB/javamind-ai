@@ -10,8 +10,8 @@ export interface UserProfile {
 }
 
 interface AuthStore {
-  session: any | null   // Supabase Session
-  user: any | null      // Supabase User
+  session: any | null
+  user: any | null
   profile: UserProfile | null
   isSyncing: boolean
   authModalOpen: boolean
@@ -45,41 +45,50 @@ export const useAuthStore = create<AuthStore>()(
         if (!supabase) return
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'github',
-          options: {
-            redirectTo: 'javamind://auth/callback',
-            skipBrowserRedirect: true,
-          },
+          options: { redirectTo: 'javamind://auth/callback', skipBrowserRedirect: true },
         })
         if (error) { console.error('[auth] GitHub error:', error.message); return }
-        if (data.url) await ipc.shell.openExternal(data.url)
+        if (data.url) await ipc.auth.openOAuthWindow(data.url)
       },
 
       signInWithGoogle: async () => {
         if (!supabase) return
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
-          options: {
-            redirectTo: 'javamind://auth/callback',
-            skipBrowserRedirect: true,
-          },
+          options: { redirectTo: 'javamind://auth/callback', skipBrowserRedirect: true },
         })
         if (error) { console.error('[auth] Google error:', error.message); return }
-        if (data.url) await ipc.shell.openExternal(data.url)
+        if (data.url) await ipc.auth.openOAuthWindow(data.url)
       },
 
       handleDeepLink: async (url: string) => {
         if (!supabase) return
         try {
-          // Extract the code from the deep link URL
-          // e.g. javamind://auth/callback?code=xxxx&state=yyyy
           const parsed = new URL(url)
+
+          // PKCE flow — code in query params (?code=xxx)
           const code = parsed.searchParams.get('code')
-          if (!code) return
-          const { data, error } = await supabase.auth.exchangeCodeForSession(code)
-          if (error) { console.error('[auth] exchange error:', error.message); return }
-          set({ session: data.session, user: data.session?.user ?? null })
-          await get().fetchProfile()
-          set({ authModalOpen: false })
+          if (code) {
+            const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+            if (error) { console.error('[auth] exchangeCode error:', error.message); return }
+            set({ session: data.session, user: data.session?.user ?? null })
+            await get().fetchProfile()
+            set({ authModalOpen: false })
+            return
+          }
+
+          // Implicit flow — tokens in hash (#access_token=xxx)
+          const hash = parsed.hash.startsWith('#') ? parsed.hash.slice(1) : parsed.hash
+          const hashParams = new URLSearchParams(hash)
+          const access_token = hashParams.get('access_token')
+          const refresh_token = hashParams.get('refresh_token')
+          if (access_token && refresh_token) {
+            const { data, error } = await supabase.auth.setSession({ access_token, refresh_token })
+            if (error) { console.error('[auth] setSession error:', error.message); return }
+            set({ session: data.session, user: data.session?.user ?? null })
+            await get().fetchProfile()
+            set({ authModalOpen: false })
+          }
         } catch (err) {
           console.error('[auth] deep link handling error:', err)
         }
@@ -99,13 +108,12 @@ export const useAuthStore = create<AuthStore>()(
           .from('profiles')
           .select('id, username, avatar_url')
           .eq('id', user.id)
-          .single()
+          .maybeSingle()  // null (not 406) when profile not created yet
         if (data) set({ profile: data as UserProfile })
       },
     }),
     {
       name: 'javamind:auth',
-      // Only persist session (not UI state)
       partialize: (state) => ({ session: state.session, user: state.user, profile: state.profile }),
     }
   )

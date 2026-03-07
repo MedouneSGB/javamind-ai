@@ -42,22 +42,28 @@ export function AppShell() {
   useEffect(() => {
     if (!supabase) return
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      useAuthStore.getState().setSession(newSession)
+      const store = useAuthStore.getState()
+      store.setSession(newSession)
       if (newSession?.user) {
-        fetchProfile().then(() => pullFromSupabase())
+        store.setAuthModalOpen(false)   // Close modal as soon as session arrives
+        store.fetchProfile().then(() => pullFromSupabase())
       }
     })
     return () => subscription.unsubscribe()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // When session becomes available (e.g. restored from localStorage), pull data
+  // When session is restored from localStorage on startup, pull cloud data once
   useEffect(() => {
-    if (session) {
-      fetchProfile().then(() => pullFromSupabase())
+    if (session?.access_token) {
+      // Small delay to let Supabase client restore the session internally first
+      const t = setTimeout(() => {
+        fetchProfile().then(() => pullFromSupabase())
+      }, 500)
+      return () => clearTimeout(t)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.access_token])
+  }, []) // run once on mount only
 
   // Auto-reopen last project on startup
   useEffect(() => {
