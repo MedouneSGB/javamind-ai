@@ -6,6 +6,7 @@ import { Github, Chrome, LogOut, Loader2, X, CloudOff, AlertCircle } from 'lucid
 import { useLangStore } from '../../store/langStore'
 import { ipc } from '../../lib/ipc'
 
+
 export function AuthModal() {
   const { authModalOpen, setAuthModalOpen, session, user, profile, isSyncing, signOut } = useAuthStore()
   const { t } = useLangStore()
@@ -89,8 +90,9 @@ function LoginView({ t }: { t: (k: string) => string }) {
         setError('No OAuth URL returned. Check Supabase provider configuration.')
         return
       }
-      await ipc.shell.openExternal(data.url)
-      // Reset loading — browser is now open, waiting for deep link callback
+      // Open in-app OAuth popup — intercepts javamind:// redirect directly
+      await ipc.auth.openOAuthWindow(data.url)
+      // Popup closed after redirect — loading state will resolve via auth:deeplink event
       setLoading(null)
     } catch (err: any) {
       setError(err?.message ?? 'Unknown error')
@@ -148,7 +150,7 @@ function LoginView({ t }: { t: (k: string) => string }) {
 
       {loading && (
         <div style={{ fontSize: '11px', color: 'var(--color-text-dim)', textAlign: 'center' }}>
-          Navigateur ouvert — connectez-vous puis revenez ici...
+          Connectez-vous dans la fenêtre qui s'est ouverte...
         </div>
       )}
     </div>

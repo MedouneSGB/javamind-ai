@@ -80,5 +80,7 @@ export const ipc = {
   auth: {
     onDeepLink: (cb: (url: string) => void) =>
       window.electronAPI.on('auth:deeplink', (url) => cb(url as string)),
+    openOAuthWindow: (url: string): Promise<void> =>
+      window.electronAPI.invoke('auth:openOAuthWindow', url) as Promise<void>,
   },
 }

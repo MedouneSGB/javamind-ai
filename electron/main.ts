@@ -689,7 +689,42 @@ ipcMain.handle('shell:openExternal', (_, url: string) => {
 })
 
 // ─────────────────────────────────────────────────────────
-// Deep link protocol — javamind://
+// OAuth popup window — intercepts javamind:// redirect directly
+// More reliable than deep links in dev mode
+// ─────────────────────────────────────────────────────────
+ipcMain.handle('auth:openOAuthWindow', (_event, oauthUrl: string) => {
+  const authWin = new BrowserWindow({
+    width: 900,
+    height: 700,
+    title: 'Sign in',
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+    },
+  })
+
+  authWin.loadURL(oauthUrl)
+
+  const handleUrl = (url: string) => {
+    if (!url.startsWith('javamind://')) return false
+    authWin.destroy()
+    mainWindow?.webContents.send('auth:deeplink', url)
+    return true
+  }
+
+  // Intercept server-side redirects (302 → javamind://)
+  authWin.webContents.on('will-redirect', (e, url) => {
+    if (handleUrl(url)) e.preventDefault()
+  })
+
+  // Intercept client-side navigations
+  authWin.webContents.on('will-navigate', (e, url) => {
+    if (handleUrl(url)) e.preventDefault()
+  })
+})
+
+// ─────────────────────────────────────────────────────────
+// Deep link protocol — javamind:// (fallback for packaged builds)
 // ─────────────────────────────────────────────────────────
 if (process.defaultApp) {
   if (process.argv.length >= 2) {
@@ -699,22 +734,16 @@ if (process.defaultApp) {
   app.setAsDefaultProtocolClient('javamind')
 }
 
-// Windows: second-instance fires when the OS opens the protocol URL
 app.on('second-instance', (_event, commandLine) => {
   if (mainWindow) {
     if (mainWindow.isMinimized()) mainWindow.restore()
     mainWindow.focus()
   }
   const deepLinkUrl = commandLine.find(arg => arg.startsWith('javamind://'))
-  if (deepLinkUrl) {
-    mainWindow?.webContents.send('auth:deeplink', deepLinkUrl)
-  }
+  if (deepLinkUrl) mainWindow?.webContents.send('auth:deeplink', deepLinkUrl)
 })
 
-// macOS: open-url fires for deep links
 app.on('open-url', (event, url) => {
   event.preventDefault()
-  if (url.startsWith('javamind://')) {
-    mainWindow?.webContents.send('auth:deeplink', url)
-  }
+  if (url.startsWith('javamind://')) mainWindow?.webContents.send('auth:deeplink', url)
 })
