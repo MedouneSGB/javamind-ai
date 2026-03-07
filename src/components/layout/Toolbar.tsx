@@ -6,8 +6,9 @@ import { useLangStore, type Lang } from '../../store/langStore'
 import { ipc } from '../../lib/ipc'
 import { useEditorStore } from '../../store/editorStore'
 import { useRecentProjectsStore } from '../../store/recentProjectsStore'
-import { FolderOpen, FileText, Play, Square, Loader2, Search, Target, MessageCircle, PanelRightClose, PanelRightOpen, Languages, ChevronDown, Clock } from 'lucide-react'
+import { FolderOpen, FolderPlus, FileText, Play, Square, Loader2, Search, Target, MessageCircle, PanelRightClose, PanelRightOpen, Languages, ChevronDown, Clock } from 'lucide-react'
 import * as pathBrowser from 'path-browserify'
+import { NewWorkspaceModal } from './NewWorkspaceModal'
 
 export function Toolbar() {
   const { run, stop, isCompiling, isRunning } = useJavaRunner()
@@ -17,6 +18,7 @@ export function Toolbar() {
   const { lang, setLang, t } = useLangStore()
   const { projects, addRecentProject } = useRecentProjectsStore()
   const [showRecents, setShowRecents] = useState(false)
+  const [showNewWorkspace, setShowNewWorkspace] = useState(false)
 
   const handleOpenProject = async () => {
     const p = await ipc.fs.openProject()
@@ -47,6 +49,8 @@ export function Toolbar() {
   }
 
   return (
+    <>
+    <NewWorkspaceModal isOpen={showNewWorkspace} onClose={() => setShowNewWorkspace(false)} />
     <div style={{
       height: '42px',
       background: 'var(--color-surface-2)',
@@ -59,6 +63,11 @@ export function Toolbar() {
     }}>
       {/* File actions */}
       <ToolbarGroup>
+        {/* New Workspace button */}
+        <ToolBtn onClick={() => setShowNewWorkspace(true)} title="New Java Workspace (Ctrl+Shift+N)">
+          <FolderPlus size={13}/> {t('newWorkspace')}
+        </ToolBtn>
+
         {/* Open Project — split button with recent dropdown */}
         <div style={{ position: 'relative', display: 'flex' }}>
           <ToolBtn onClick={handleOpenProject} title="Open Project (Ctrl+Shift+O)" noBorderRight={projects.length > 0}>
@@ -223,6 +232,7 @@ export function Toolbar() {
         }
       </ToolBtn>
     </div>
+    </>
   )
 }
 
