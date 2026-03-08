@@ -63,6 +63,9 @@ interface AiStore {
   setAiModel: (model: string) => void
   setAiProvider: (provider: AiProvider) => void
   clearChatHistory: () => void
+  // Bulk setter for Supabase sync
+  setChatHistory: (history: AiMessage[]) => void
+  setActiveMode: (mode: AiMode) => void
 
   // Cache helpers
   getModelCache: (provider: AiProvider) => ModelCache | null
@@ -130,6 +133,8 @@ export const useAiStore = create<AiStore>()((set, get) => ({
   },
 
   clearChatHistory: () => set({ chatHistory: [] }),
+  setChatHistory: (history) => set({ chatHistory: history }),
+  setActiveMode: (mode) => set({ activeMode: mode }),
 
   // Cache helpers
   getModelCache: (provider) => get().modelCache[provider] ?? null,

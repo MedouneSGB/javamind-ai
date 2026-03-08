@@ -28,3 +28,13 @@ export interface OutputLine {
   type: 'stdout' | 'stderr' | 'info' | 'success' | 'error'
   timestamp: number
 }
+
+export interface CloudProject {
+  id: string
+  name: string
+  description?: string
+  /** Relative path → file content, e.g. { "src/Main.java": "..." } */
+  files: Record<string, string>
+  createdAt: string
+  updatedAt: string
+}

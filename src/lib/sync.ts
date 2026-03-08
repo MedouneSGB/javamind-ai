@@ -6,6 +6,9 @@ import { useThemeStore } from '../store/themeStore'
 import { useLangStore } from '../store/langStore'
 import { useAiStore } from '../store/aiStore'
 
+// Maximum number of chat messages to sync per session
+const MAX_SYNCED_MESSAGES = 100
+
 // Pull all user data from Supabase and hydrate local stores
 export async function pullFromSupabase(): Promise<void> {
   if (!supabase) return
@@ -43,6 +46,23 @@ export async function pullFromSupabase(): Promise<void> {
     if (prefs.ai_model) useAiStore.getState().setAiModel(prefs.ai_model)
   }
 
+  // Pull AI chat session
+  const { data: aiSession } = await supabase
+    .from('ai_sessions')
+    .select('chat_history, active_mode')
+    .eq('user_id', userId)
+    .single()
+
+  if (aiSession) {
+    const ai = useAiStore.getState()
+    if (Array.isArray(aiSession.chat_history) && aiSession.chat_history.length > 0) {
+      ai.setChatHistory(aiSession.chat_history)
+    }
+    if (aiSession.active_mode) {
+      ai.setActiveMode(aiSession.active_mode)
+    }
+  }
+
   // Pull recent projects
   const { data: recents } = await supabase
     .from('recent_projects')
@@ -77,6 +97,15 @@ export async function pushToSupabase(): Promise<void> {
     const lang = useLangStore.getState().lang
     const ai = useAiStore.getState()
     const recents = useRecentProjectsStore.getState().projects
+
+    // Upsert AI chat session (keep last MAX_SYNCED_MESSAGES messages)
+    const chatHistoryToSync = ai.chatHistory.slice(-MAX_SYNCED_MESSAGES)
+    await supabase.from('ai_sessions').upsert({
+      user_id: userId,
+      chat_history: chatHistoryToSync,
+      active_mode: ai.activeMode,
+      updated_at: new Date().toISOString(),
+    })
 
     // Upsert learning progress
     await supabase.from('learning_progress').upsert({
