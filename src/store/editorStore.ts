@@ -7,6 +7,8 @@ interface EditorStore {
   tabs: EditorTab[]
   activeTabId: string | null
   openFile: (filePath: string, content: string) => void
+  openLesson: (conceptId: string, title: string) => void
+  openChallenge: (conceptId: string, boilerplate: string, title: string) => void
   closeTab: (id: string) => void
   setActiveTab: (id: string) => void
   updateContent: (id: string, content: string) => void
@@ -43,6 +45,54 @@ export const useEditorStore = create<EditorStore>()(
     (set, get) => ({
       tabs: [],
       activeTabId: null,
+
+      openChallenge: (conceptId, boilerplate, title) => {
+        const challengeId = `challenge://${conceptId}`
+        const existing = get().tabs.find(t => t.id === challengeId)
+        if (existing) {
+          set({ activeTabId: existing.id })
+          return
+        }
+        const tab: EditorTab = {
+          id: challengeId,
+          path: challengeId,
+          name: `⚡ ${title}`,
+          content: boilerplate,
+          language: 'java',
+          isDirty: false,
+          isActive: true,
+          kind: 'challenge',
+          lessonId: conceptId,
+        }
+        set(state => ({
+          tabs: [...state.tabs.map(t => ({ ...t, isActive: false })), tab],
+          activeTabId: tab.id,
+        }))
+      },
+
+      openLesson: (conceptId, title) => {
+        const lessonId = `lesson://${conceptId}`
+        const existing = get().tabs.find(t => t.id === lessonId)
+        if (existing) {
+          set({ activeTabId: existing.id })
+          return
+        }
+        const tab: EditorTab = {
+          id: lessonId,
+          path: lessonId,
+          name: `📖 ${title}`,
+          content: '',
+          language: 'lesson',
+          isDirty: false,
+          isActive: true,
+          kind: 'lesson',
+          lessonId: conceptId,
+        }
+        set(state => ({
+          tabs: [...state.tabs.map(t => ({ ...t, isActive: false })), tab],
+          activeTabId: tab.id,
+        }))
+      },
 
       openFile: (filePath, content) => {
         const existing = get().tabs.find(t => t.path === filePath)
@@ -95,6 +145,8 @@ export const useEditorStore = create<EditorStore>()(
       saveFile: async (id) => {
         const tab = get().tabs.find(t => t.id === id)
         if (!tab) return
+        // Skip virtual tabs (lesson:// and challenge://)
+        if (tab.kind === 'lesson' || tab.kind === 'challenge') return
         await ipc.fs.writeFile(tab.path, tab.content)
         set(state => ({
           tabs: state.tabs.map(t => t.id === id ? { ...t, isDirty: false } : t),
@@ -102,7 +154,7 @@ export const useEditorStore = create<EditorStore>()(
       },
 
       saveAllDirty: async () => {
-        const dirty = get().tabs.filter(t => t.isDirty)
+        const dirty = get().tabs.filter(t => t.isDirty && t.kind !== 'lesson' && t.kind !== 'challenge')
         await Promise.all(dirty.map(t => ipc.fs.writeFile(t.path, t.content)))
         set(state => ({
           tabs: state.tabs.map(t => ({ ...t, isDirty: false })),

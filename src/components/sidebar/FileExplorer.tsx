@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import {
   FolderOpen, Folder, Coffee, Settings2, FileJson, FileCode2,
   FileText, File, RefreshCw, ChevronDown, ChevronRight,
-  FilePlus, FolderPlus,
+  FilePlus, FolderPlus, Trash2, Check, X,
 } from 'lucide-react'
 import { useProjectStore } from '../../store/projectStore'
 import { useEditorStore } from '../../store/editorStore'
@@ -23,7 +23,7 @@ type CreatingState = { parentPath: string; type: 'file' | 'folder' } | null
 
 export function FileExplorer() {
   const { fileTree, projectPath, setFileTree, setProjectPath } = useProjectStore()
-  const { openFile, closeAllTabs } = useEditorStore()
+  const { openFile, closeAllTabs, closeTab } = useEditorStore()
   const { addRecentProject } = useRecentProjectsStore()
   const { t } = useLangStore()
   const [creating, setCreating] = useState<CreatingState>(null)
@@ -64,6 +64,19 @@ export function FileExplorer() {
       await refreshTree()
     }
     setCreating(null)
+  }
+
+  // Close all editor tabs whose path is or starts with deletedPath, then refresh tree
+  const handleDelete = async (deletedPath: string) => {
+    const { tabs } = useEditorStore.getState()
+    const normDeleted = deletedPath.replace(/\\/g, '/')
+    tabs.forEach(tab => {
+      const normTab = tab.path.replace(/\\/g, '/')
+      if (normTab === normDeleted || normTab.startsWith(normDeleted + '/')) {
+        closeTab(tab.id)
+      }
+    })
+    await refreshTree()
   }
 
   if (!fileTree) {
@@ -197,6 +210,7 @@ export function FileExplorer() {
           onStartCreate={(parentPath, type) => setCreating({ parentPath, type })}
           onConfirmCreate={handleCreate}
           onCancelCreate={() => setCreating(null)}
+          onDelete={handleDelete}
         />
       ))}
     </div>
@@ -205,29 +219,32 @@ export function FileExplorer() {
 }
 
 // ── Small icon button ─────────────────────────────────────────────
-function IconBtn({ children, onClick, title }: {
+function IconBtn({ children, onClick, title, danger }: {
   children: React.ReactNode
   onClick: () => void
   title: string
+  danger?: boolean
 }) {
   return (
     <button
       onClick={onClick}
       title={title}
       style={{
-        background: 'transparent', border: 'none',
-        color: 'var(--color-text-dim)', cursor: 'pointer',
+        background: danger ? 'rgba(192,57,43,0.12)' : 'transparent',
+        border: 'none',
+        color: danger ? 'var(--color-error)' : 'var(--color-text-dim)',
+        cursor: 'pointer',
         padding: '2px 3px', borderRadius: '3px',
         display: 'flex', alignItems: 'center',
         transition: 'color 0.1s, background 0.1s',
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.color = 'var(--color-accent)'
-        e.currentTarget.style.background = 'var(--color-surface-3)'
+        e.currentTarget.style.color = danger ? '#ff6b6b' : 'var(--color-accent)'
+        e.currentTarget.style.background = danger ? 'rgba(192,57,43,0.25)' : 'var(--color-surface-3)'
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.color = 'var(--color-text-dim)'
-        e.currentTarget.style.background = 'transparent'
+        e.currentTarget.style.color = danger ? 'var(--color-error)' : 'var(--color-text-dim)'
+        e.currentTarget.style.background = danger ? 'rgba(192,57,43,0.12)' : 'transparent'
       }}
     >{children}</button>
   )
@@ -286,7 +303,7 @@ function InlineCreator({ type, depth, onConfirm, onCancel }: {
 }
 
 // ── File / Folder node ───────────────────────────────────────────
-function FileNode({ node, depth, creating, onOpenFile, onStartCreate, onConfirmCreate, onCancelCreate }: {
+function FileNode({ node, depth, creating, onOpenFile, onStartCreate, onConfirmCreate, onCancelCreate, onDelete }: {
   node: FileTreeNode
   depth: number
   creating: CreatingState
@@ -294,9 +311,11 @@ function FileNode({ node, depth, creating, onOpenFile, onStartCreate, onConfirmC
   onStartCreate: (parentPath: string, type: 'file' | 'folder') => void
   onConfirmCreate: (name: string) => void
   onCancelCreate: () => void
+  onDelete: (path: string) => Promise<void>
 }) {
   const [expanded, setExpanded] = useState(false)
   const [hovered, setHovered] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState(false)
   const { t } = useLangStore()
 
   const getIcon = () => {
@@ -310,16 +329,25 @@ function FileNode({ node, depth, creating, onOpenFile, onStartCreate, onConfirmC
   }
 
   const handleClick = () => {
+    if (deleteConfirm) return
     if (node.isDirectory) setExpanded(!expanded)
     else onOpenFile(node.path)
   }
 
+  const handleDeleteConfirm = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    await ipc.fs.deleteFile(node.path)
+    await onDelete(node.path)
+    setDeleteConfirm(false)
+  }
+
   return (
-    <div>
+    <div
+      onMouseLeave={() => { setHovered(false); setDeleteConfirm(false) }}
+    >
       <div
         onClick={handleClick}
         onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
         style={{
           height: '24px',
           padding: `0 4px 0 ${8 + depth * 14}px`,
@@ -331,7 +359,9 @@ function FileNode({ node, depth, creating, onOpenFile, onStartCreate, onConfirmC
           fontSize: '12.5px',
           userSelect: 'none',
           transition: 'background 0.1s',
-          background: hovered ? 'var(--color-surface-3)' : 'transparent',
+          background: deleteConfirm
+            ? 'rgba(192,57,43,0.08)'
+            : hovered ? 'var(--color-surface-3)' : 'transparent',
         }}
       >
         {node.isDirectory && (
@@ -344,20 +374,48 @@ function FileNode({ node, depth, creating, onOpenFile, onStartCreate, onConfirmC
           {node.name}
         </span>
 
-        {/* New file / folder buttons — visible on hover for directories */}
-        {node.isDirectory && hovered && (
+        {/* Action buttons — visible on hover */}
+        {(hovered || deleteConfirm) && (
           <div
             style={{ display: 'flex', gap: '1px', flexShrink: 0 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <IconBtn
-              title={t('newJavaFileHere')}
-              onClick={() => { setExpanded(true); onStartCreate(node.path, 'file') }}
-            ><FilePlus size={11}/></IconBtn>
-            <IconBtn
-              title={t('newFolderHere')}
-              onClick={() => { setExpanded(true); onStartCreate(node.path, 'folder') }}
-            ><FolderPlus size={11}/></IconBtn>
+            {deleteConfirm ? (
+              /* Confirmation: ✓ confirm  ✗ cancel */
+              <>
+                <IconBtn
+                  title={t('deleteConfirm')}
+                  onClick={handleDeleteConfirm}
+                  danger
+                ><Check size={11}/></IconBtn>
+                <IconBtn
+                  title={t('deleteCancel')}
+                  onClick={(e) => { (e as React.MouseEvent).stopPropagation(); setDeleteConfirm(false) }}
+                ><X size={11}/></IconBtn>
+              </>
+            ) : (
+              <>
+                {/* New file / folder buttons for directories */}
+                {node.isDirectory && (
+                  <>
+                    <IconBtn
+                      title={t('newJavaFileHere')}
+                      onClick={() => { setExpanded(true); onStartCreate(node.path, 'file') }}
+                    ><FilePlus size={11}/></IconBtn>
+                    <IconBtn
+                      title={t('newFolderHere')}
+                      onClick={() => { setExpanded(true); onStartCreate(node.path, 'folder') }}
+                    ><FolderPlus size={11}/></IconBtn>
+                  </>
+                )}
+                {/* Delete button — always visible on hover */}
+                <IconBtn
+                  title={t('deleteFile')}
+                  onClick={(e) => { (e as React.MouseEvent).stopPropagation(); setDeleteConfirm(true) }}
+                  danger
+                ><Trash2 size={11}/></IconBtn>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -383,6 +441,7 @@ function FileNode({ node, depth, creating, onOpenFile, onStartCreate, onConfirmC
               onStartCreate={onStartCreate}
               onConfirmCreate={onConfirmCreate}
               onCancelCreate={onCancelCreate}
+              onDelete={onDelete}
             />
           ))}
         </>

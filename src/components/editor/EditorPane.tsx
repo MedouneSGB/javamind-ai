@@ -3,6 +3,7 @@ import { useLangStore } from '../../store/langStore'
 import { Coffee, FolderOpen, FileText, Sparkles } from 'lucide-react'
 import { MonacoEditor } from './MonacoEditor'
 import { EditorTabs } from './EditorTabs'
+import { LessonView } from './LessonView'
 
 export function EditorPane() {
   const { tabs, activeTabId, updateContent } = useEditorStore()
@@ -20,17 +21,61 @@ export function EditorPane() {
 
       {activeTab ? (
         <div style={{ flex: 1, overflow: 'hidden' }}>
-          <MonacoEditor
-            key={activeTab.id}
-            tabId={activeTab.id}
-            content={activeTab.content}
-            language={activeTab.language}
-            onChange={(value) => updateContent(activeTab.id, value)}
-          />
+          {activeTab.kind === 'lesson' ? (
+            <LessonView lessonId={activeTab.lessonId!} />
+          ) : activeTab.kind === 'challenge' ? (
+            <>
+              <ChallengeHeader lessonId={activeTab.lessonId!} />
+              <div style={{ flex: 1, overflow: 'hidden', height: 'calc(100% - 36px)' }}>
+                <MonacoEditor
+                  key={activeTab.id}
+                  tabId={activeTab.id}
+                  content={activeTab.content}
+                  language="java"
+                  onChange={(value) => updateContent(activeTab.id, value)}
+                />
+              </div>
+            </>
+          ) : (
+            <MonacoEditor
+              key={activeTab.id}
+              tabId={activeTab.id}
+              content={activeTab.content}
+              language={activeTab.language}
+              onChange={(value) => updateContent(activeTab.id, value)}
+            />
+          )}
         </div>
       ) : (
         <WelcomeScreen />
       )}
+    </div>
+  )
+}
+
+function ChallengeHeader({ lessonId }: { lessonId: string }) {
+  const { lang } = useLangStore()
+  return (
+    <div style={{
+      height: '36px',
+      display: 'flex',
+      alignItems: 'center',
+      padding: '0 14px',
+      gap: '8px',
+      background: 'rgba(212,165,116,0.08)',
+      borderBottom: '1px solid rgba(212,165,116,0.3)',
+      fontSize: '12px',
+      color: 'var(--color-accent)',
+      fontWeight: 600,
+      letterSpacing: '0.4px',
+    }}>
+      <span>⚡</span>
+      <span>{lang === 'fr' ? 'Mode Défi' : 'Challenge Mode'}</span>
+      <span style={{ color: 'var(--color-text-dim)', fontWeight: 400 }}>·</span>
+      <span style={{ color: 'var(--color-text-muted)', fontWeight: 400 }}>{lessonId}</span>
+      <span style={{ marginLeft: 'auto', fontSize: '11px', color: 'var(--color-text-dim)', fontWeight: 400 }}>
+        {lang === 'fr' ? 'Écrivez votre solution, puis soumettez via le panneau IA →' : 'Write your solution, then submit via the AI panel →'}
+      </span>
     </div>
   )
 }
@@ -61,10 +106,16 @@ function WelcomeScreen() {
         <div style={{ fontSize: '18px', fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: '8px' }}>
           JavaMind AI
         </div>
-        <div style={{ fontSize: '13px', lineHeight: 1.8 }}>
-          <FolderOpen size={13}/> {t('openProjectWith')} <Key>Ctrl+Shift+O</Key><br />
-          <FileText size={13}/> {t('orOpenFileWith')} <Key>Ctrl+O</Key><br />
-          <Sparkles size={13}/> {t('askMentor')} <Key>Ctrl+Shift+A</Key>
+        <div style={{ fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <FolderOpen size={13}/> <span>{t('openProjectWith')}</span> <Key>Ctrl+Shift+O</Key>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <FileText size={13}/> <span>{t('orOpenFileWith')}</span> <Key>Ctrl+O</Key>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Sparkles size={13}/> <span>{t('askMentor')}</span> <Key>Ctrl+Shift+A</Key>
+          </div>
         </div>
       </div>
     </div>
