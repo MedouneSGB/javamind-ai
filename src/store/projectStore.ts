@@ -18,6 +18,7 @@ interface ProjectStore {
   clearOutput: () => void
   setErrors: (errors: JavaError[]) => void
   clearErrors: () => void
+  reset: () => void
 }
 
 export const useProjectStore = create<ProjectStore>()(
@@ -42,6 +43,7 @@ export const useProjectStore = create<ProjectStore>()(
       clearOutput: () => set({ output: [] }),
       setErrors: (errors) => set({ errors }),
       clearErrors: () => set({ errors: [] }),
+      reset: () => set({ projectPath: null, fileTree: null, isCompiling: false, isRunning: false, runningPid: null, output: [], errors: [] }),
     }),
     {
       name: 'project-store',

@@ -1,5 +1,10 @@
 import { useState } from 'react'
 import { useAuthStore } from '../../store/authStore'
+import { useEditorStore } from '../../store/editorStore'
+import { useProjectStore } from '../../store/projectStore'
+import { useRecentProjectsStore } from '../../store/recentProjectsStore'
+import { useLearningStore } from '../../store/learningStore'
+import { useAiStore } from '../../store/aiStore'
 import { supabase } from '../../lib/supabase'
 import { pushToSupabase } from '../../lib/sync'
 import { Github, Chrome, LogOut, Loader2, X, CloudOff, AlertCircle, UserCircle2 } from 'lucide-react'
@@ -53,7 +58,15 @@ export function AuthModal() {
               user={user}
               profile={profile}
               isSyncing={isSyncing}
-              onSignOut={async () => { await signOut(); setAuthModalOpen(false) }}
+              onSignOut={async () => {
+                await signOut()
+                useEditorStore.getState().reset()
+                useProjectStore.getState().reset()
+                useRecentProjectsStore.getState().reset()
+                useLearningStore.getState().reset()
+                useAiStore.getState().reset()
+                setAuthModalOpen(false)
+              }}
               onSyncNow={() => pushToSupabase()}
               t={t}
             />

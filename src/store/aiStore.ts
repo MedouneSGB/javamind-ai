@@ -72,6 +72,7 @@ interface AiStore {
   setModelCache: (provider: AiProvider, models: ModelEntry[], status?: Record<string, boolean | null>) => void
   updateModelStatus: (provider: AiProvider, status: Record<string, boolean>) => void
   isCacheValid: (provider: AiProvider) => boolean
+  reset: () => void
 }
 
 export const useAiStore = create<AiStore>()((set, get) => ({
@@ -135,6 +136,7 @@ export const useAiStore = create<AiStore>()((set, get) => ({
   clearChatHistory: () => set({ chatHistory: [] }),
   setChatHistory: (history) => set({ chatHistory: history }),
   setActiveMode: (mode) => set({ activeMode: mode }),
+  reset: () => set({ chatHistory: [], currentChallenge: null, challengeStartTime: null, interviewSession: null, isPanelOpen: false, activeMode: 'chat', isStreaming: false, currentStreamContent: '' }),
 
   // Cache helpers
   getModelCache: (provider) => get().modelCache[provider] ?? null,

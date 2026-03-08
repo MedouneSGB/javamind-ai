@@ -14,6 +14,7 @@ interface RecentProjectsStore {
   addRecentProject: (path: string, name: string) => void
   removeRecentProject: (path: string) => void
   setProjects: (projects: RecentProject[]) => void
+  reset: () => void
 }
 
 export const useRecentProjectsStore = create<RecentProjectsStore>()(
@@ -32,6 +33,7 @@ export const useRecentProjectsStore = create<RecentProjectsStore>()(
         set((state) => ({ projects: state.projects.filter((p) => p.path !== path) })),
 
       setProjects: (projects) => set({ projects }),
+      reset: () => set({ projects: [] }),
     }),
     { name: 'javamind:recentProjects' }
   )
