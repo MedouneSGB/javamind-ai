@@ -16,6 +16,7 @@ interface EditorStore {
   saveAllDirty: () => Promise<void>
   getActiveTab: () => EditorTab | null
   closeAllTabs: () => void
+  reset: () => void
 }
 
 function getLanguage(filePath: string): string {
@@ -167,6 +168,7 @@ export const useEditorStore = create<EditorStore>()(
       },
 
       closeAllTabs: () => set({ tabs: [], activeTabId: null }),
+      reset: () => set({ tabs: [], activeTabId: null }),
     }),
     {
       name: 'editor-store',

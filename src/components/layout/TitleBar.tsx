@@ -1,4 +1,5 @@
 import { ipc } from '../../lib/ipc'
+import { isElectron } from '../../lib/platform'
 import { useThemeStore } from '../../store/themeStore'
 import { useAuthStore } from '../../store/authStore'
 import { RotateCcw, Sun, Moon, Minus, Square, X, User } from 'lucide-react'
@@ -31,13 +32,15 @@ export function TitleBar() {
     >
       {/* Logo + title */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <div style={{
-          width: '18px', height: '18px',
-          background: 'var(--color-accent)',
-          borderRadius: '4px',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '10px', fontWeight: 700, color: isDark ? '#0d0d0d' : '#ffffff',
-        }}>J</div>
+        {/* Tasse de café — logo JavaMind */}
+        <svg width="20" height="20" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+          <rect width="256" height="256" rx="52" fill="#F0E4CC"/>
+          <path d="M90 100 Q96 82 90 65" stroke="#7B4F2E" strokeWidth="10" fill="none" strokeLinecap="round"/>
+          <path d="M118 100 Q124 82 118 65" stroke="#7B4F2E" strokeWidth="10" fill="none" strokeLinecap="round"/>
+          <path d="M146 100 Q152 82 146 65" stroke="#7B4F2E" strokeWidth="10" fill="none" strokeLinecap="round"/>
+          <path d="M68 116 L188 116 L176 196 Q172 210 158 210 L98 210 Q84 210 80 196 Z" fill="#7B4F2E"/>
+          <path d="M182 130 Q218 130 218 163 Q218 196 182 196" stroke="#7B4F2E" strokeWidth="16" fill="none" strokeLinecap="round"/>
+        </svg>
         <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text)', letterSpacing: '0.3px' }}>
           JavaMind AI
         </span>
@@ -118,10 +121,14 @@ export function TitleBar() {
           {isDark ? <Sun size={14}/> : <Moon size={14}/>}
         </button>
 
-        {/* Window controls */}
-        <WinBtn onClick={() => ipc.window.minimize()} title="Minimize"><Minus size={12}/></WinBtn>
-        <WinBtn onClick={() => ipc.window.maximize()} title="Maximize"><Square size={11}/></WinBtn>
-        <WinBtn onClick={() => ipc.window.close()} title="Close" isClose><X size={12}/></WinBtn>
+        {/* Window controls — Electron only */}
+        {isElectron && (
+          <>
+            <WinBtn onClick={() => ipc.window.minimize()} title="Minimize"><Minus size={12}/></WinBtn>
+            <WinBtn onClick={() => ipc.window.maximize()} title="Maximize"><Square size={11}/></WinBtn>
+            <WinBtn onClick={() => ipc.window.close()} title="Close" isClose><X size={12}/></WinBtn>
+          </>
+        )}
       </div>
     </div>
     </>

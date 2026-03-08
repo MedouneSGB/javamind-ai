@@ -1,8 +1,17 @@
-import { app, BrowserWindow, ipcMain, dialog, shell, globalShortcut } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, shell, globalShortcut, protocol } from 'electron'
 import * as path from 'path'
 import * as fs from 'fs'
 import * as fsp from 'fs/promises'
 import { spawn, ChildProcess } from 'child_process'
+
+// ─────────────────────────────────────────────────────────
+// Enregistrement du scheme javamind:// AVANT app.whenReady()
+// Obligatoire pour que Chromium route ce scheme en interne
+// et que will-navigate/will-redirect se déclenchent correctement
+// ─────────────────────────────────────────────────────────
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'javamind', privileges: { secure: true, standard: true, supportFetchAPI: true } },
+])
 
 // Load env variables in development
 if (process.env.ELECTRON_DEV) {
@@ -12,6 +21,7 @@ if (process.env.ELECTRON_DEV) {
 }
 
 let mainWindow: BrowserWindow | null = null
+let currentAuthWin: BrowserWindow | null = null
 const runningProcesses = new Map<number, ChildProcess>()
 
 // Single instance lock — required for Windows deep link protocol handling
@@ -21,6 +31,9 @@ if (!gotLock) {
 }
 
 function createWindow(): void {
+  // Icône de la fenêtre (barre des tâches + alt-tab)
+  const iconPath = path.join(__dirname, '../public/logo.png')
+
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
@@ -29,6 +42,7 @@ function createWindow(): void {
     frame: false,
     titleBarStyle: 'hidden',
     backgroundColor: '#0d0d0d',
+    icon: fs.existsSync(iconPath) ? iconPath : undefined,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -60,6 +74,59 @@ app.whenReady().then(() => {
       mainWindow?.webContents.reload()
     })
   }
+
+  // ── Protocole javamind:// — filet de sécurité si will-navigate ne capture pas ──
+  // Cas : fragment (#access_token=...) → le hash n'est pas dans request.url
+  // Solution : la page HTML retournée lit window.location.hash et re-navigue
+  // avec les params en query string (javamind://auth/done?access_token=...)
+  protocol.handle('javamind', (request) => {
+    const url = request.url // ex: 'javamind://auth/callback?code=xxx'
+
+    if (url.startsWith('javamind://auth/done')) {
+      // Étape 2 : tokens convertis en query params par le JS de la page
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('auth:deeplink', url)
+      }
+      closeAuthWin()
+      return new Response(
+        '<html><body style="font-family:sans-serif;text-align:center;padding:60px;background:#0d0d0d;color:#eee">' +
+        '<p style="font-size:18px">✓ Connexion réussie !</p><p>Vous pouvez fermer cette fenêtre.</p></body></html>',
+        { headers: { 'content-type': 'text/html' } }
+      )
+    }
+
+    if (url.startsWith('javamind://auth/')) {
+      // Le code PKCE est dans les query params → on l'envoie directement
+      const parsed = new URL(url)
+      if (parsed.searchParams.get('code') || parsed.searchParams.get('access_token')) {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('auth:deeplink', url)
+        }
+        closeAuthWin()
+        return new Response(
+          '<html><body style="font-family:sans-serif;text-align:center;padding:60px;background:#0d0d0d;color:#eee">' +
+          '<p style="font-size:18px">✓ Connexion réussie !</p><p>Vous pouvez fermer cette fenêtre.</p></body></html>',
+          { headers: { 'content-type': 'text/html' } }
+        )
+      }
+
+      // Pas de params visibles → les tokens sont probablement dans le hash (implicit flow)
+      // On sert une page JS qui lit le hash et re-navigue avec les params en query string
+      return new Response(
+        `<html><body style="background:#0d0d0d"><script>
+          var hash = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : window.location.hash;
+          if (hash) {
+            window.location.href = 'javamind://auth/done?' + hash;
+          } else {
+            document.body.innerHTML = '<p style="color:#eee;font-family:sans-serif;text-align:center;padding:60px">Erreur : aucun token reçu.</p>';
+          }
+        </script></body></html>`,
+        { headers: { 'content-type': 'text/html' } }
+      )
+    }
+
+    return new Response('Not found', { status: 404 })
+  })
 })
 
 app.on('window-all-closed', () => {
@@ -689,11 +756,24 @@ ipcMain.handle('shell:openExternal', (_, url: string) => {
 })
 
 // ─────────────────────────────────────────────────────────
-// OAuth popup window — intercepts javamind:// redirect directly
-// More reliable than deep links in dev mode
+// Helper — ferme la fenêtre OAuth si elle est ouverte
+// ─────────────────────────────────────────────────────────
+function closeAuthWin() {
+  if (currentAuthWin && !currentAuthWin.isDestroyed()) {
+    currentAuthWin.destroy()
+  }
+  currentAuthWin = null
+}
+
+// ─────────────────────────────────────────────────────────
+// OAuth popup window — ouvre le flow OAuth dans une fenêtre Electron
+// Intercepte les redirections javamind:// via will-redirect / will-navigate
+// Le protocol.handle('javamind') dans app.whenReady() sert de filet de sécurité
 // ─────────────────────────────────────────────────────────
 ipcMain.handle('auth:openOAuthWindow', (_event, oauthUrl: string) => {
-  const authWin = new BrowserWindow({
+  closeAuthWin()
+
+  currentAuthWin = new BrowserWindow({
     width: 900,
     height: 700,
     title: 'Sign in',
@@ -703,23 +783,29 @@ ipcMain.handle('auth:openOAuthWindow', (_event, oauthUrl: string) => {
     },
   })
 
-  authWin.loadURL(oauthUrl)
+  currentAuthWin.loadURL(oauthUrl)
 
   const handleUrl = (url: string) => {
     if (!url.startsWith('javamind://')) return false
-    authWin.destroy()
     mainWindow?.webContents.send('auth:deeplink', url)
+    closeAuthWin()
     return true
   }
 
-  // Intercept server-side redirects (302 → javamind://)
-  authWin.webContents.on('will-redirect', (e, url) => {
+  // Intercepte les redirections serveur (302 → javamind://)
+  currentAuthWin.webContents.on('will-redirect', (_e, url) => {
+    handleUrl(url)
+    // Ne pas appeler e.preventDefault() ici : le protocol.handle prend le relais
+  })
+
+  // Intercepte les navigations JS (window.location.href = 'javamind://...')
+  // Fonctionne car javamind:// est enregistré comme scheme privilégié
+  currentAuthWin.webContents.on('will-navigate', (e, url) => {
     if (handleUrl(url)) e.preventDefault()
   })
 
-  // Intercept client-side navigations
-  authWin.webContents.on('will-navigate', (e, url) => {
-    if (handleUrl(url)) e.preventDefault()
+  currentAuthWin.on('closed', () => {
+    currentAuthWin = null
   })
 })
 

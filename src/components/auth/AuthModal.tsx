@@ -1,6 +1,12 @@
 import { useState } from 'react'
 import { useAuthStore } from '../../store/authStore'
+import { useEditorStore } from '../../store/editorStore'
+import { useProjectStore } from '../../store/projectStore'
+import { useRecentProjectsStore } from '../../store/recentProjectsStore'
+import { useLearningStore } from '../../store/learningStore'
+import { useAiStore } from '../../store/aiStore'
 import { supabase } from '../../lib/supabase'
+import { isElectron } from '../../lib/platform'
 import { pushToSupabase } from '../../lib/sync'
 import { Github, Chrome, LogOut, Loader2, X, CloudOff, AlertCircle, UserCircle2 } from 'lucide-react'
 import { useLangStore } from '../../store/langStore'
@@ -53,7 +59,15 @@ export function AuthModal() {
               user={user}
               profile={profile}
               isSyncing={isSyncing}
-              onSignOut={async () => { await signOut(); setAuthModalOpen(false) }}
+              onSignOut={async () => {
+                await signOut()
+                useEditorStore.getState().reset()
+                useProjectStore.getState().reset()
+                useRecentProjectsStore.getState().reset()
+                useLearningStore.getState().reset()
+                useAiStore.getState().reset()
+                setAuthModalOpen(false)
+              }}
               onSyncNow={() => pushToSupabase()}
               t={t}
             />
@@ -75,6 +89,21 @@ function LoginView({ t }: { t: (k: string) => string }) {
     setError(null)
     setLoading(provider)
     try {
+      if (!isElectron) {
+        // ── Web mode : redirect OAuth standard ───────────────────
+        const { error: oauthError } = await supabase.auth.signInWithOAuth({
+          provider,
+          options: { redirectTo: window.location.origin },
+        })
+        if (oauthError) {
+          setError(oauthError.message)
+          setLoading(null)
+        }
+        // La page navigue vers le provider → loading ne sera jamais reset ici
+        return
+      }
+
+      // ── Electron mode : deep link via fenêtre native ──────────
       const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
@@ -90,9 +119,7 @@ function LoginView({ t }: { t: (k: string) => string }) {
         setError('No OAuth URL returned. Check Supabase provider configuration.')
         return
       }
-      // Open in-app OAuth popup — intercepts javamind:// redirect directly
       await ipc.auth.openOAuthWindow(data.url)
-      // Popup closed after redirect — loading state will resolve via auth:deeplink event
       setLoading(null)
     } catch (err: any) {
       setError(err?.message ?? 'Unknown error')

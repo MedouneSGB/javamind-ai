@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { supabase } from '../lib/supabase'
 import { ipc } from '../lib/ipc'
+import { isElectron } from '../lib/platform'
 
 export interface UserProfile {
   id: string
@@ -43,6 +44,13 @@ export const useAuthStore = create<AuthStore>()(
 
       signInWithGitHub: async () => {
         if (!supabase) return
+        if (!isElectron) {
+          await supabase.auth.signInWithOAuth({
+            provider: 'github',
+            options: { redirectTo: window.location.origin },
+          })
+          return
+        }
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'github',
           options: { redirectTo: 'javamind://auth/callback', skipBrowserRedirect: true },
@@ -53,6 +61,13 @@ export const useAuthStore = create<AuthStore>()(
 
       signInWithGoogle: async () => {
         if (!supabase) return
+        if (!isElectron) {
+          await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: { redirectTo: window.location.origin },
+          })
+          return
+        }
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: { redirectTo: 'javamind://auth/callback', skipBrowserRedirect: true },
@@ -71,6 +86,22 @@ export const useAuthStore = create<AuthStore>()(
           if (code) {
             const { data, error } = await supabase.auth.exchangeCodeForSession(code)
             if (error) { console.error('[auth] exchangeCode error:', error.message); return }
+            set({ session: data.session, user: data.session?.user ?? null })
+            await get().fetchProfile()
+            set({ authModalOpen: false })
+            return
+          }
+
+          // Implicit flow via protocol.handle — tokens en query params
+          // (protocol.handle lit le hash JS et le re-envoie en query string)
+          const access_token_q = parsed.searchParams.get('access_token')
+          const refresh_token_q = parsed.searchParams.get('refresh_token')
+          if (access_token_q && refresh_token_q) {
+            const { data, error } = await supabase.auth.setSession({
+              access_token: access_token_q,
+              refresh_token: refresh_token_q,
+            })
+            if (error) { console.error('[auth] setSession error:', error.message); return }
             set({ session: data.session, user: data.session?.user ?? null })
             await get().fetchProfile()
             set({ authModalOpen: false })

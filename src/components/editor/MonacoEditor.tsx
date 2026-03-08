@@ -1,7 +1,8 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState, useCallback } from 'react'
 import Editor, { loader, type Monaco } from '@monaco-editor/react'
 import type * as monaco from 'monaco-editor'
 import { useThemeStore } from '../../store/themeStore'
+import { useLangStore } from '../../store/langStore'
 
 // Load Monaco from node_modules
 loader.config({
@@ -119,12 +120,22 @@ interface MonacoEditorProps {
   content: string
   language: string
   onChange: (value: string) => void
+  disablePaste?: boolean
 }
 
-export function MonacoEditor({ tabId, content, language, onChange }: MonacoEditorProps) {
+export function MonacoEditor({ tabId, content, language, onChange, disablePaste }: MonacoEditorProps) {
   const monacoRef = useRef<Monaco | null>(null)
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null)
   const { theme } = useThemeStore()
+  const { lang } = useLangStore()
+  const [pasteMsg, setPasteMsg] = useState(false)
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const showPasteBlocked = useCallback(() => {
+    setPasteMsg(true)
+    if (toastTimer.current) clearTimeout(toastTimer.current)
+    toastTimer.current = setTimeout(() => setPasteMsg(false), 2500)
+  }, [])
 
   // Switch Monaco theme when app theme changes
   useEffect(() => {
@@ -173,9 +184,55 @@ export function MonacoEditor({ tabId, content, language, onChange }: MonacoEdito
         if (store) store.saveFile(tabId)
       }
     )
+
+    // Challenge mode: block paste
+    if (disablePaste) {
+      // Block Ctrl+V
+      editor.addCommand(
+        monacoInstance.KeyMod.CtrlCmd | monacoInstance.KeyCode.KeyV,
+        () => showPasteBlocked()
+      )
+      // Block Shift+Insert
+      editor.addCommand(
+        monacoInstance.KeyMod.Shift | monacoInstance.KeyCode.Insert,
+        () => showPasteBlocked()
+      )
+      // Block paste from context menu
+      editor.onDidPaste(() => {
+        editor.trigger('', 'undo', null)
+        showPasteBlocked()
+      })
+    }
   }
 
+  const toastText = lang === 'fr'
+    ? '🚫 Collage désactivé en mode défi — écrivez le code vous-même !'
+    : '🚫 Paste disabled in challenge mode — write the code yourself!'
+
   return (
+    <div style={{ position: 'relative', height: '100%' }}>
+      {pasteMsg && (
+        <div style={{
+          position: 'absolute',
+          top: '12px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 100,
+          background: '#1e1d1c',
+          border: '1px solid rgba(212,165,116,0.5)',
+          borderRadius: '8px',
+          padding: '8px 16px',
+          fontSize: '12px',
+          color: 'var(--color-accent)',
+          fontWeight: 500,
+          whiteSpace: 'nowrap',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+          pointerEvents: 'none',
+          animation: 'fadeIn 0.15s ease',
+        }}>
+          {toastText}
+        </div>
+      )}
     <Editor
       key={tabId}
       defaultValue={content}
@@ -222,5 +279,6 @@ export function MonacoEditor({ tabId, content, language, onChange }: MonacoEdito
       }}
       className="monaco-editor-container"
     />
+    </div>
   )
 }
