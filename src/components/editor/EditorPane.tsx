@@ -61,10 +61,16 @@ function WelcomeScreen() {
         <div style={{ fontSize: '18px', fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: '8px' }}>
           JavaMind AI
         </div>
-        <div style={{ fontSize: '13px', lineHeight: 1.8 }}>
-          <FolderOpen size={13}/> {t('openProjectWith')} <Key>Ctrl+Shift+O</Key><br />
-          <FileText size={13}/> {t('orOpenFileWith')} <Key>Ctrl+O</Key><br />
-          <Sparkles size={13}/> {t('askMentor')} <Key>Ctrl+Shift+A</Key>
+        <div style={{ fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <FolderOpen size={13}/> <span>{t('openProjectWith')}</span> <Key>Ctrl+Shift+O</Key>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <FileText size={13}/> <span>{t('orOpenFileWith')}</span> <Key>Ctrl+O</Key>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Sparkles size={13}/> <span>{t('askMentor')}</span> <Key>Ctrl+Shift+A</Key>
+          </div>
         </div>
       </div>
     </div>
