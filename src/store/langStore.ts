@@ -161,6 +161,39 @@ export const LABELS: Record<Lang, Record<string, string>> = {
     cancel: 'Annuler',
     yes: 'Oui',
     no: 'Non',
+
+    // Lesson / Learning
+    startChallenge: 'Commencer le défi',
+    lessonLabel: 'Cours',
+
+    // Track titles
+    trackFundamentals: 'Fondamentaux Java',
+    trackOop: 'Programmation Orientée Objet',
+    trackAdvanced: 'Java Avancé',
+
+    // Concept titles
+    conceptSetup: 'Hello World & Configuration',
+    conceptVariables: 'Variables & Types de données',
+    conceptOperators: 'Opérateurs & Expressions',
+    conceptControlFlow: 'Structures de contrôle',
+    conceptLoops: 'Boucles & Itération',
+    conceptMethods: 'Méthodes & Fonctions',
+    conceptArrays: 'Tableaux (Arrays)',
+    conceptStrings: 'Strings & Méthodes',
+    conceptClasses: 'Classes & Objets',
+    conceptEncapsulation: 'Encapsulation',
+    conceptInheritance: 'Héritage',
+    conceptPolymorphism: 'Polymorphisme',
+    conceptInterfaces: 'Interfaces & Classes Abstraites',
+    conceptCollections: 'Framework Collections',
+    conceptExceptions: 'Gestion des Exceptions',
+    conceptGenerics: 'Génériques',
+    conceptLambdas: 'Lambdas & Interfaces Fonctionnelles',
+    conceptStreams: 'Streams API',
+    conceptOptional: 'Optional & Null Safety',
+    conceptConcurrency: 'Concurrence & Threads',
+    conceptDesignPatterns: 'Patrons de Conception',
+    conceptIo: 'Fichiers I/O',
   },
   en: {
     // Toolbar
@@ -319,6 +352,39 @@ export const LABELS: Record<Lang, Record<string, string>> = {
     cancel: 'Cancel',
     yes: 'Yes',
     no: 'No',
+
+    // Lesson / Learning
+    startChallenge: 'Start Challenge',
+    lessonLabel: 'Lesson',
+
+    // Track titles
+    trackFundamentals: 'Java Fundamentals',
+    trackOop: 'Object-Oriented Programming',
+    trackAdvanced: 'Advanced Java',
+
+    // Concept titles
+    conceptSetup: 'Hello World & Setup',
+    conceptVariables: 'Variables & Data Types',
+    conceptOperators: 'Operators & Expressions',
+    conceptControlFlow: 'Control Flow',
+    conceptLoops: 'Loops & Iteration',
+    conceptMethods: 'Methods & Functions',
+    conceptArrays: 'Arrays',
+    conceptStrings: 'Strings & Methods',
+    conceptClasses: 'Classes & Objects',
+    conceptEncapsulation: 'Encapsulation',
+    conceptInheritance: 'Inheritance',
+    conceptPolymorphism: 'Polymorphism',
+    conceptInterfaces: 'Interfaces & Abstract Classes',
+    conceptCollections: 'Collections Framework',
+    conceptExceptions: 'Exception Handling',
+    conceptGenerics: 'Generics',
+    conceptLambdas: 'Lambdas & Functional Interfaces',
+    conceptStreams: 'Streams API',
+    conceptOptional: 'Optional & Null Safety',
+    conceptConcurrency: 'Concurrency & Threads',
+    conceptDesignPatterns: 'Design Patterns',
+    conceptIo: 'File I/O',
   },
 }
 

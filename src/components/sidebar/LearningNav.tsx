@@ -1,15 +1,25 @@
 import type { ReactNode } from 'react'
 import { useLearningStore } from '../../store/learningStore'
 import { Lock, Circle, CircleDot, CheckCircle2 } from 'lucide-react'
-import { useAiStore } from '../../store/aiStore'
 import { useLangStore } from '../../store/langStore'
+import { useEditorStore } from '../../store/editorStore'
 import { CURRICULUM, getAvailableConcepts } from '../../lib/learning-curriculum'
+import { getLessonTitle } from '../../lib/lesson-content'
 import type { ConceptStatus } from '../../types/learning.types'
+
+/** Convert 'control-flow' → 'conceptControlFlow', 'oop' → 'trackOop' */
+function toKey(prefix: string, id: string): string {
+  const pascal = id
+    .split('-')
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .join('')
+  return prefix + pascal
+}
 
 export function LearningNav() {
   const { masteredConcepts, currentTopic, setCurrentTopic } = useLearningStore()
-  const { setMode, setPanelOpen } = useAiStore()
-  const { t } = useLangStore()
+  const { t, lang } = useLangStore()
+  const { openLesson } = useEditorStore()
 
   const available = getAvailableConcepts(masteredConcepts)
 
@@ -20,12 +30,13 @@ export function LearningNav() {
     return 'locked'
   }
 
-  const handleSelectConcept = (conceptId: string) => {
+  const handleSelectConcept = (conceptId: string, conceptTitle: string) => {
     const status = getStatus(conceptId)
     if (status === 'locked') return
     setCurrentTopic(conceptId)
-    setMode('challenge')
-    setPanelOpen(true)
+    // Use translated title if available, fallback to curriculum title
+    const translatedTitle = getLessonTitle(conceptId, lang) || conceptTitle
+    openLesson(conceptId, translatedTitle)
   }
 
   const total = CURRICULUM.tracks.reduce((sum, t) => sum + t.concepts.length, 0)
@@ -63,6 +74,7 @@ export function LearningNav() {
       {/* Tracks */}
       {CURRICULUM.tracks.map(track => {
         const trackMastered = track.concepts.filter(c => masteredConcepts.includes(c.id)).length
+        const trackLabel = t(toKey('track', track.id)) || track.title
         return (
           <div key={track.id} style={{ marginBottom: '4px' }}>
             {/* Track header */}
@@ -77,7 +89,7 @@ export function LearningNav() {
               justifyContent: 'space-between',
               alignItems: 'center',
             }}>
-              <span>{track.title}</span>
+              <span>{trackLabel}</span>
               <span style={{ color: 'var(--color-text-dim)', fontWeight: 400 }}>
                 {trackMastered}/{track.concepts.length}
               </span>
@@ -86,13 +98,14 @@ export function LearningNav() {
             {/* Concepts */}
             {track.concepts.map(concept => {
               const status = getStatus(concept.id)
+              const conceptLabel = t(toKey('concept', concept.id)) || concept.title
               return (
                 <ConceptNode
                   key={concept.id}
-                  title={concept.title}
+                  title={conceptLabel}
                   status={status}
                   isCurrent={concept.id === currentTopic}
-                  onClick={() => handleSelectConcept(concept.id)}
+                  onClick={() => handleSelectConcept(concept.id, concept.title)}
                 />
               )
             })}

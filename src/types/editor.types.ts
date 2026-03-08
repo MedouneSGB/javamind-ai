@@ -6,6 +6,9 @@ export interface EditorTab {
   language: string
   isDirty: boolean
   isActive: boolean
+  /** 'lesson' tabs render the LessonView; 'challenge' tabs show Monaco with a challenge header */
+  kind?: 'file' | 'lesson' | 'challenge'
+  lessonId?: string
 }
 
 export interface FileTreeNode {

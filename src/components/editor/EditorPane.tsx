@@ -3,6 +3,7 @@ import { useLangStore } from '../../store/langStore'
 import { Coffee, FolderOpen, FileText, Sparkles } from 'lucide-react'
 import { MonacoEditor } from './MonacoEditor'
 import { EditorTabs } from './EditorTabs'
+import { LessonView } from './LessonView'
 
 export function EditorPane() {
   const { tabs, activeTabId, updateContent } = useEditorStore()
@@ -20,17 +21,61 @@ export function EditorPane() {
 
       {activeTab ? (
         <div style={{ flex: 1, overflow: 'hidden' }}>
-          <MonacoEditor
-            key={activeTab.id}
-            tabId={activeTab.id}
-            content={activeTab.content}
-            language={activeTab.language}
-            onChange={(value) => updateContent(activeTab.id, value)}
-          />
+          {activeTab.kind === 'lesson' ? (
+            <LessonView lessonId={activeTab.lessonId!} />
+          ) : activeTab.kind === 'challenge' ? (
+            <>
+              <ChallengeHeader lessonId={activeTab.lessonId!} />
+              <div style={{ flex: 1, overflow: 'hidden', height: 'calc(100% - 36px)' }}>
+                <MonacoEditor
+                  key={activeTab.id}
+                  tabId={activeTab.id}
+                  content={activeTab.content}
+                  language="java"
+                  onChange={(value) => updateContent(activeTab.id, value)}
+                />
+              </div>
+            </>
+          ) : (
+            <MonacoEditor
+              key={activeTab.id}
+              tabId={activeTab.id}
+              content={activeTab.content}
+              language={activeTab.language}
+              onChange={(value) => updateContent(activeTab.id, value)}
+            />
+          )}
         </div>
       ) : (
         <WelcomeScreen />
       )}
+    </div>
+  )
+}
+
+function ChallengeHeader({ lessonId }: { lessonId: string }) {
+  const { lang } = useLangStore()
+  return (
+    <div style={{
+      height: '36px',
+      display: 'flex',
+      alignItems: 'center',
+      padding: '0 14px',
+      gap: '8px',
+      background: 'rgba(212,165,116,0.08)',
+      borderBottom: '1px solid rgba(212,165,116,0.3)',
+      fontSize: '12px',
+      color: 'var(--color-accent)',
+      fontWeight: 600,
+      letterSpacing: '0.4px',
+    }}>
+      <span>⚡</span>
+      <span>{lang === 'fr' ? 'Mode Défi' : 'Challenge Mode'}</span>
+      <span style={{ color: 'var(--color-text-dim)', fontWeight: 400 }}>·</span>
+      <span style={{ color: 'var(--color-text-muted)', fontWeight: 400 }}>{lessonId}</span>
+      <span style={{ marginLeft: 'auto', fontSize: '11px', color: 'var(--color-text-dim)', fontWeight: 400 }}>
+        {lang === 'fr' ? 'Écrivez votre solution, puis soumettez via le panneau IA →' : 'Write your solution, then submit via the AI panel →'}
+      </span>
     </div>
   )
 }
