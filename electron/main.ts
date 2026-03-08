@@ -67,12 +67,18 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   createWindow()
-  if (process.env.ELECTRON_DEV) {
-    globalShortcut.register('CommandOrControl+R', () => {
-      mainWindow?.webContents.reload()
-    })
-    globalShortcut.register('F5', () => {
-      mainWindow?.webContents.reload()
+  // Bloquer Ctrl+R et F5 au niveau clavier pour éviter les rechargements accidentels
+  // (ex: l'utilisateur tape dans un input et appuie sur Ctrl+R)
+  // Le bouton "Reload" dans la TitleBar appelle window.location.reload() directement
+  // et continue de fonctionner normalement via le renderer.
+  if (mainWindow) {
+    mainWindow.webContents.on('before-input-event', (_event, input) => {
+      const isReload =
+        (input.control || input.meta) && input.key.toLowerCase() === 'r' && !input.shift
+      const isF5 = input.key === 'F5'
+      if ((isReload || isF5) && !input.isAutoRepeat) {
+        _event.preventDefault()
+      }
     })
   }
 

@@ -9,15 +9,22 @@ import type { AiMessage } from '../../types/ai.types'
 
 export function RubberDuck() {
   const { stream, getContext } = useAiStream()
-  const { isStreaming, currentStreamContent } = useAiStore()
+  const {
+    isStreaming, currentStreamContent,
+    duckMessages, isDuckActive,
+    setDuckMessages, setDuckActive, resetDuck,
+  } = useAiStore()
   const { t } = useLangStore()
-  const [messages, setMessages] = useState<AiMessage[]>([])
   const [input, setInput] = useState('')
-  const [isActive, setIsActive] = useState(false)
+
+  // Alias pour lisibilité
+  const messages = duckMessages
+  const isActive = isDuckActive
+  const setMessages = setDuckMessages
 
   const startSession = async (description: string) => {
     const ctx = getContext()
-    setIsActive(true)
+    setDuckActive(true)
 
     const userMsg: AiMessage = {
       id: crypto.randomUUID(), role: 'user', content: description,
@@ -162,7 +169,7 @@ export function RubberDuck() {
           </button>
         </div>
         <button
-          onClick={() => { setIsActive(false); setMessages([]) }}
+          onClick={() => resetDuck()}
           style={{
             marginTop: '6px', background: 'transparent', border: 'none',
             color: 'var(--color-text-dim)', fontSize: '11px', cursor: 'pointer',

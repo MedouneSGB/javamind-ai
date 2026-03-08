@@ -43,6 +43,10 @@ interface AiStore {
   challengeStartTime: number | null
   interviewSession: InterviewSession | null
 
+  // Duck mode — persisted in store to survive mode switches
+  duckMessages: AiMessage[]
+  isDuckActive: boolean
+
   // Persisted
   aiModel: string
   aiProvider: AiProvider
@@ -67,6 +71,11 @@ interface AiStore {
   setChatHistory: (history: AiMessage[]) => void
   setActiveMode: (mode: AiMode) => void
 
+  // Duck helpers
+  setDuckMessages: (messages: AiMessage[]) => void
+  setDuckActive: (active: boolean) => void
+  resetDuck: () => void
+
   // Cache helpers
   getModelCache: (provider: AiProvider) => ModelCache | null
   setModelCache: (provider: AiProvider, models: ModelEntry[], status?: Record<string, boolean | null>) => void
@@ -84,6 +93,8 @@ export const useAiStore = create<AiStore>()((set, get) => ({
   currentChallenge: null,
   challengeStartTime: null,
   interviewSession: null,
+  duckMessages: [],
+  isDuckActive: false,
 
   // Restore from localStorage
   aiProvider: loadFromStorage<AiProvider>(LS_PROVIDER, 'gemini'),
@@ -136,7 +147,13 @@ export const useAiStore = create<AiStore>()((set, get) => ({
   clearChatHistory: () => set({ chatHistory: [] }),
   setChatHistory: (history) => set({ chatHistory: history }),
   setActiveMode: (mode) => set({ activeMode: mode }),
-  reset: () => set({ chatHistory: [], currentChallenge: null, challengeStartTime: null, interviewSession: null, isPanelOpen: false, activeMode: 'chat', isStreaming: false, currentStreamContent: '' }),
+
+  // Duck helpers
+  setDuckMessages: (messages) => set({ duckMessages: messages }),
+  setDuckActive: (active) => set({ isDuckActive: active }),
+  resetDuck: () => set({ duckMessages: [], isDuckActive: false }),
+
+  reset: () => set({ chatHistory: [], currentChallenge: null, challengeStartTime: null, interviewSession: null, isPanelOpen: false, activeMode: 'chat', isStreaming: false, currentStreamContent: '', duckMessages: [], isDuckActive: false }),
 
   // Cache helpers
   getModelCache: (provider) => get().modelCache[provider] ?? null,
