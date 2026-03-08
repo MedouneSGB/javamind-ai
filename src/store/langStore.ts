@@ -108,6 +108,9 @@ export const LABELS: Record<Lang, Record<string, string>> = {
     refresh: 'Actualiser',
     newJavaFileHere: 'Nouveau fichier Java ici',
     newFolderHere: 'Nouveau dossier ici',
+    deleteFile: 'Supprimer',
+    deleteConfirm: 'Confirmer la suppression',
+    deleteCancel: 'Annuler',
 
     // LearningNav
     overallProgress: 'Progression globale',
@@ -263,6 +266,9 @@ export const LABELS: Record<Lang, Record<string, string>> = {
     refresh: 'Refresh',
     newJavaFileHere: 'New Java File here',
     newFolderHere: 'New Folder here',
+    deleteFile: 'Delete',
+    deleteConfirm: 'Confirm deletion',
+    deleteCancel: 'Cancel',
 
     // LearningNav
     overallProgress: 'Overall Progress',
