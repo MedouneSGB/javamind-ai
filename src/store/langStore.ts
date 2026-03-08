@@ -130,6 +130,19 @@ export const LABELS: Record<Lang, Record<string, string>> = {
     // Recent projects
     recentProjects: 'Projets récents',
 
+    // New Workspace modal
+    newWorkspace: 'Nouveau',
+    newWorkspaceTitle: 'Créer un workspace Java',
+    newWorkspaceDesc: 'Génère la structure src/ + Main.java prête à l\'emploi',
+    projectName: 'Nom du projet',
+    parentFolder: 'Dossier parent',
+    browse: 'Parcourir',
+    creating: 'Création...',
+    create: 'Créer le workspace',
+    noFolderSelected: 'Aucun dossier sélectionné',
+    workspaceNameError: 'Nom invalide : lettres, chiffres, tirets et underscores uniquement (ex: MonProjet)',
+    createWorkspaceBtn: 'Créer un workspace',
+
     // Cloud projects
     cloudProjects: 'Projets Cloud',
     cloudSaveCurrent: 'Sauvegarder le projet actuel dans le cloud',
@@ -271,6 +284,19 @@ export const LABELS: Record<Lang, Record<string, string>> = {
 
     // Recent projects
     recentProjects: 'Recent projects',
+
+    // New Workspace modal
+    newWorkspace: 'New',
+    newWorkspaceTitle: 'Create a Java workspace',
+    newWorkspaceDesc: 'Generates src/ structure + Main.java ready to use',
+    projectName: 'Project name',
+    parentFolder: 'Parent folder',
+    browse: 'Browse',
+    creating: 'Creating...',
+    create: 'Create workspace',
+    noFolderSelected: 'No folder selected',
+    workspaceNameError: 'Invalid name: use letters, digits, hyphens and underscores only (e.g. MyProject)',
+    createWorkspaceBtn: 'Create a workspace',
 
     // Cloud projects
     cloudProjects: 'Cloud Projects',

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useAuthStore } from '../../store/authStore'
 import { supabase } from '../../lib/supabase'
 import { pushToSupabase } from '../../lib/sync'
-import { Github, Chrome, LogOut, Loader2, X, CloudOff, AlertCircle } from 'lucide-react'
+import { Github, Chrome, LogOut, Loader2, X, CloudOff, AlertCircle, UserCircle2 } from 'lucide-react'
 import { useLangStore } from '../../store/langStore'
 import { ipc } from '../../lib/ipc'
 
@@ -173,10 +173,11 @@ function ProfileView({ user, profile, isSyncing, onSignOut, onSyncNow, t }: {
         ) : (
           <div style={{
             width: '42px', height: '42px', borderRadius: '50%',
-            background: 'var(--color-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '18px', fontWeight: 700, color: '#0d0d0d',
+            background: 'var(--color-surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            border: '2px solid var(--color-border)',
+            flexShrink: 0,
           }}>
-            {displayName[0].toUpperCase()}
+            <UserCircle2 size={26} style={{ color: 'var(--color-text-dim)' }} />
           </div>
         )}
         <div>

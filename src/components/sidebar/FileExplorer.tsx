@@ -6,8 +6,11 @@ import {
 } from 'lucide-react'
 import { useProjectStore } from '../../store/projectStore'
 import { useEditorStore } from '../../store/editorStore'
+import { useRecentProjectsStore } from '../../store/recentProjectsStore'
 import { useLangStore } from '../../store/langStore'
 import { ipc } from '../../lib/ipc'
+import { NewWorkspaceModal } from '../layout/NewWorkspaceModal'
+import * as pathBrowser from 'path-browserify'
 import type { FileTreeNode } from '../../types/editor.types'
 
 // Generate Java boilerplate from filename
@@ -19,10 +22,22 @@ function javaBoilerplate(filename: string): string {
 type CreatingState = { parentPath: string; type: 'file' | 'folder' } | null
 
 export function FileExplorer() {
-  const { fileTree, projectPath, setFileTree } = useProjectStore()
-  const { openFile } = useEditorStore()
+  const { fileTree, projectPath, setFileTree, setProjectPath } = useProjectStore()
+  const { openFile, closeAllTabs } = useEditorStore()
+  const { addRecentProject } = useRecentProjectsStore()
   const { t } = useLangStore()
   const [creating, setCreating] = useState<CreatingState>(null)
+  const [showNewWorkspace, setShowNewWorkspace] = useState(false)
+
+  const handleOpenProject = async () => {
+    const p = await ipc.fs.openProject()
+    if (!p) return
+    closeAllTabs()
+    setProjectPath(p)
+    const tree = await ipc.fs.readDir(p)
+    setFileTree(tree)
+    addRecentProject(p, pathBrowser.basename(p))
+  }
 
   const refreshTree = async () => {
     if (!projectPath) return
@@ -53,20 +68,79 @@ export function FileExplorer() {
 
   if (!fileTree) {
     return (
-      <div style={{
-        padding: '12px 8px',
-        color: 'var(--color-text-dim)',
-        fontSize: '12px',
-        textAlign: 'center',
-        lineHeight: 1.8,
-      }}>
-        <div style={{ marginBottom: '8px', color: 'var(--color-accent)' }}><FolderOpen size={24}/></div>
-        {t('openProject')}
-      </div>
+      <>
+        <NewWorkspaceModal isOpen={showNewWorkspace} onClose={() => setShowNewWorkspace(false)} />
+        <div style={{
+          padding: '20px 12px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '12px',
+        }}>
+          {/* Icon */}
+          <div style={{
+            width: '48px', height: '48px', borderRadius: '12px',
+            background: 'var(--color-accent)15',
+            border: '1px solid var(--color-accent)30',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            marginBottom: '4px',
+          }}>
+            <FolderOpen size={24} style={{ color: 'var(--color-accent)' }} />
+          </div>
+
+          <div style={{ fontSize: '12px', color: 'var(--color-text-dim)', textAlign: 'center', lineHeight: 1.6 }}>
+            {t('openProject')}
+          </div>
+
+          {/* New workspace (primary) */}
+          <button
+            onClick={() => setShowNewWorkspace(true)}
+            style={{
+              width: '100%',
+              height: '34px',
+              background: 'var(--color-accent)',
+              border: 'none',
+              borderRadius: '8px',
+              color: '#0d0d0d',
+              fontSize: '12px', fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+              transition: 'opacity 0.1s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.88' }}
+            onMouseLeave={(e) => { e.currentTarget.style.opacity = '1' }}
+          >
+            <FolderPlus size={13} /> {t('createWorkspaceBtn')}
+          </button>
+
+          {/* Open existing (secondary) */}
+          <button
+            onClick={handleOpenProject}
+            style={{
+              width: '100%',
+              height: '34px',
+              background: 'transparent',
+              border: '1px solid var(--color-border)',
+              borderRadius: '8px',
+              color: 'var(--color-text-dim)',
+              fontSize: '12px', fontWeight: 500,
+              cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+              transition: 'all 0.1s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-accent)'; e.currentTarget.style.color = 'var(--color-text)' }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-text-dim)' }}
+          >
+            <FolderOpen size={13} /> {t('open')}
+          </button>
+        </div>
+      </>
     )
   }
 
   return (
+    <>
+    <NewWorkspaceModal isOpen={showNewWorkspace} onClose={() => setShowNewWorkspace(false)} />
     <div style={{ overflow: 'auto', flex: 1 }}>
       {/* Header */}
       <div style={{
@@ -126,6 +200,7 @@ export function FileExplorer() {
         />
       ))}
     </div>
+    </>
   )
 }
 
