@@ -33,6 +33,7 @@ export function EditorPane() {
                   content={activeTab.content}
                   language="java"
                   onChange={(value) => updateContent(activeTab.id, value)}
+                  disablePaste={true}
                 />
               </div>
             </>
