@@ -15,6 +15,7 @@ import { useSyncOnChange } from '../../hooks/useSyncOnChange'
 import { pullFromSupabase } from '../../lib/sync'
 import { supabase } from '../../lib/supabase'
 import { ipc } from '../../lib/ipc'
+import { isElectron } from '../../lib/platform'
 import * as pathBrowser from 'path-browserify'
 
 export function AppShell() {
@@ -31,8 +32,9 @@ export function AppShell() {
   // Sync on store changes
   useSyncOnChange()
 
-  // Listen for OAuth deep links from the main process (Electron protocol handler)
+  // Listen for OAuth deep links — Electron only
   useEffect(() => {
+    if (!isElectron) return
     return ipc.auth.onDeepLink((url) => {
       handleDeepLink(url)
     })
@@ -65,8 +67,9 @@ export function AppShell() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // run once on mount only
 
-  // Auto-reopen last project on startup
+  // Auto-reopen last project on startup — Electron only (no FS in browser)
   useEffect(() => {
+    if (!isElectron) return
     const last = projects[0]
     if (!last) return
     ipc.fs.exists(last.path).then((exists) => {

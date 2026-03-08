@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { supabase } from '../lib/supabase'
 import { ipc } from '../lib/ipc'
+import { isElectron } from '../lib/platform'
 
 export interface UserProfile {
   id: string
@@ -43,6 +44,13 @@ export const useAuthStore = create<AuthStore>()(
 
       signInWithGitHub: async () => {
         if (!supabase) return
+        if (!isElectron) {
+          await supabase.auth.signInWithOAuth({
+            provider: 'github',
+            options: { redirectTo: window.location.origin },
+          })
+          return
+        }
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'github',
           options: { redirectTo: 'javamind://auth/callback', skipBrowserRedirect: true },
@@ -53,6 +61,13 @@ export const useAuthStore = create<AuthStore>()(
 
       signInWithGoogle: async () => {
         if (!supabase) return
+        if (!isElectron) {
+          await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: { redirectTo: window.location.origin },
+          })
+          return
+        }
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: { redirectTo: 'javamind://auth/callback', skipBrowserRedirect: true },

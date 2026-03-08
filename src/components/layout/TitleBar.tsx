@@ -1,4 +1,5 @@
 import { ipc } from '../../lib/ipc'
+import { isElectron } from '../../lib/platform'
 import { useThemeStore } from '../../store/themeStore'
 import { useAuthStore } from '../../store/authStore'
 import { RotateCcw, Sun, Moon, Minus, Square, X, User } from 'lucide-react'
@@ -118,10 +119,14 @@ export function TitleBar() {
           {isDark ? <Sun size={14}/> : <Moon size={14}/>}
         </button>
 
-        {/* Window controls */}
-        <WinBtn onClick={() => ipc.window.minimize()} title="Minimize"><Minus size={12}/></WinBtn>
-        <WinBtn onClick={() => ipc.window.maximize()} title="Maximize"><Square size={11}/></WinBtn>
-        <WinBtn onClick={() => ipc.window.close()} title="Close" isClose><X size={12}/></WinBtn>
+        {/* Window controls — Electron only */}
+        {isElectron && (
+          <>
+            <WinBtn onClick={() => ipc.window.minimize()} title="Minimize"><Minus size={12}/></WinBtn>
+            <WinBtn onClick={() => ipc.window.maximize()} title="Maximize"><Square size={11}/></WinBtn>
+            <WinBtn onClick={() => ipc.window.close()} title="Close" isClose><X size={12}/></WinBtn>
+          </>
+        )}
       </div>
     </div>
     </>
