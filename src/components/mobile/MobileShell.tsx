@@ -37,8 +37,8 @@ export function MobileShell() {
     <div style={{
       display: 'flex',
       flexDirection: 'column',
-      width: '100vw',
-      height: '100dvh',      // dvh = dynamic viewport height (gère la barre d'adresse mobile)
+      width: '100%',
+      height: '100%',   // hérite de #root qui fait déjà height:100% (=100vh)
       background: 'var(--color-bg)',
       overflow: 'hidden',
     }}>
@@ -148,6 +148,7 @@ export function MobileShell() {
 
       {/* ── Bottom Navigation ── */}
       <nav style={{
+        minHeight: '56px',
         background: 'var(--color-bg-2)',
         borderTop: '1px solid var(--color-border-2)',
         display: 'flex',
