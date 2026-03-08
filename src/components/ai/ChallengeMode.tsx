@@ -153,14 +153,21 @@ export function ChallengeMode() {
 
   if (phase === 'generating') {
     return (
-      <div style={{ padding: '12px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
-        <div style={{ fontSize: '24px', marginBottom: '8px', animation: 'pulse 1s infinite' }}>🎯</div>
-        <div style={{ fontSize: '13px' }}>{t('generatingChallenge')}</div>
-        {isStreaming && currentStreamContent && (
-          <div style={{ marginTop: '12px', textAlign: 'left' }}>
-            <StreamingText content={currentStreamContent} isStreaming />
-          </div>
-        )}
+      <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--color-text-muted)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
+        <div style={{ fontSize: '28px', animation: 'pulse 1s ease-in-out infinite' }}>🎯</div>
+        <div style={{ fontSize: '13px', fontWeight: 500 }}>{t('generatingChallenge')}</div>
+        {/* Dots de chargement animés */}
+        <div style={{ display: 'flex', gap: '7px', alignItems: 'center' }}>
+          {[0, 1, 2].map(i => (
+            <div key={i} style={{
+              width: '7px', height: '7px', borderRadius: '50%',
+              background: 'var(--color-accent)',
+              animation: 'pulse 1s ease-in-out infinite',
+              animationDelay: `${i * 0.18}s`,
+              opacity: 0.7,
+            }} />
+          ))}
+        </div>
       </div>
     )
   }
