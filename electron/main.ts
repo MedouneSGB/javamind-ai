@@ -32,7 +32,8 @@ if (!gotLock) {
 
 function createWindow(): void {
   // Icône de la fenêtre (barre des tâches + alt-tab)
-  const iconPath = path.join(__dirname, '../public/logo.png')
+  // __dirname = electron/dist/ → remonter 2 niveaux pour atteindre public/
+  const iconPath = path.join(__dirname, '../../public/logo.png')
 
   mainWindow = new BrowserWindow({
     width: 1400,
