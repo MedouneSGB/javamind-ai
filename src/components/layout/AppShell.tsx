@@ -6,12 +6,14 @@ import { Sidebar } from '../sidebar/Sidebar'
 import { EditorPane } from '../editor/EditorPane'
 import { TerminalPane } from '../terminal/TerminalPane'
 import { AiPanel } from '../ai/AiPanel'
+import { MobileShell } from '../mobile/MobileShell'
 import { useAiStore } from '../../store/aiStore'
 import { useAuthStore } from '../../store/authStore'
 import { useRecentProjectsStore } from '../../store/recentProjectsStore'
 import { useProjectStore } from '../../store/projectStore'
 import { useEditorStore } from '../../store/editorStore'
 import { useSyncOnChange } from '../../hooks/useSyncOnChange'
+import { useIsMobile } from '../../hooks/useIsMobile'
 import { pullFromSupabase } from '../../lib/sync'
 import { supabase } from '../../lib/supabase'
 import { ipc } from '../../lib/ipc'
@@ -19,6 +21,7 @@ import { isElectron } from '../../lib/platform'
 import * as pathBrowser from 'path-browserify'
 
 export function AppShell() {
+  const isMobile = useIsMobile()
   const { isPanelOpen } = useAiStore()
   const [sidebarWidth, setSidebarWidth] = useState(220)
   const [aiWidth, setAiWidth] = useState(320)
@@ -85,6 +88,10 @@ export function AppShell() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // ── Layout mobile (web uniquement, jamais en Electron) ──────────────────
+  if (isMobile) return <MobileShell />
+
+  // ── Layout desktop ────────────────────────────────────────────────────────
   return (
     <div style={{
       display: 'flex',
