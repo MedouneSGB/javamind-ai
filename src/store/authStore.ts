@@ -92,6 +92,22 @@ export const useAuthStore = create<AuthStore>()(
             return
           }
 
+          // Implicit flow via protocol.handle — tokens en query params
+          // (protocol.handle lit le hash JS et le re-envoie en query string)
+          const access_token_q = parsed.searchParams.get('access_token')
+          const refresh_token_q = parsed.searchParams.get('refresh_token')
+          if (access_token_q && refresh_token_q) {
+            const { data, error } = await supabase.auth.setSession({
+              access_token: access_token_q,
+              refresh_token: refresh_token_q,
+            })
+            if (error) { console.error('[auth] setSession error:', error.message); return }
+            set({ session: data.session, user: data.session?.user ?? null })
+            await get().fetchProfile()
+            set({ authModalOpen: false })
+            return
+          }
+
           // Implicit flow — tokens in hash (#access_token=xxx)
           const hash = parsed.hash.startsWith('#') ? parsed.hash.slice(1) : parsed.hash
           const hashParams = new URLSearchParams(hash)

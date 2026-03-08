@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <!-- Background arrondi beige -->
+  <rect width="256" height="256" rx="52" fill="#F0E4CC"/>
+
+  <!-- Vapeur gauche -->
+  <path d="M90 100 Q96 82 90 65" stroke="#7B4F2E" stroke-width="10" fill="none" stroke-linecap="round"/>
+  <!-- Vapeur milieu -->
+  <path d="M118 100 Q124 82 118 65" stroke="#7B4F2E" stroke-width="10" fill="none" stroke-linecap="round"/>
+  <!-- Vapeur droite -->
+  <path d="M146 100 Q152 82 146 65" stroke="#7B4F2E" stroke-width="10" fill="none" stroke-linecap="round"/>
+
+  <!-- Corps de la tasse -->
+  <path d="M68 116 L188 116 L176 196 Q172 210 158 210 L98 210 Q84 210 80 196 Z" fill="#7B4F2E"/>
+
+  <!-- Anse -->
+  <path d="M182 130 Q218 130 218 163 Q218 196 182 196" stroke="#7B4F2E" stroke-width="16" fill="none" stroke-linecap="round"/>
+</svg>
