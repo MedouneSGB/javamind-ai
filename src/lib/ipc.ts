@@ -3,22 +3,9 @@ import { isElectron } from './platform'
 
 // Modèles disponibles sur web (liste statique — pas d'appel API nécessaire)
 const WEB_MODELS = {
-  gemini: [
-    { id: 'gemini-2.0-flash',      label: 'Gemini 2.0 Flash' },
-    { id: 'gemini-2.0-flash-lite', label: 'Gemini 2.0 Flash Lite' },
-    { id: 'gemini-1.5-pro',        label: 'Gemini 1.5 Pro' },
-    { id: 'gemini-1.5-flash',      label: 'Gemini 1.5 Flash' },
-  ],
-  anthropic: [
-    { id: 'claude-opus-4-6',           label: 'Claude Opus 4.6' },
-    { id: 'claude-sonnet-4-6',         label: 'Claude Sonnet 4.6' },
-    { id: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5' },
-  ],
-  openai: [
-    { id: 'gpt-4o',      label: 'GPT-4o' },
-    { id: 'gpt-4o-mini', label: 'GPT-4o mini' },
-    { id: 'o3-mini',     label: 'o3 mini' },
-  ],
+  gemini:    [{ id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' }],
+  anthropic: [{ id: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6' }],
+  openai:    [{ id: 'gpt-4.1', label: 'GPT-4.1' }],
 } as const
 
 // Helpers

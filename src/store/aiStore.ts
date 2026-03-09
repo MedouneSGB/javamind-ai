@@ -98,7 +98,7 @@ export const useAiStore = create<AiStore>()((set, get) => ({
 
   // Restore from localStorage
   aiProvider: loadFromStorage<AiProvider>(LS_PROVIDER, 'gemini'),
-  aiModel: loadFromStorage<string>(LS_MODEL, 'gemini-2.0-flash'),
+  aiModel: loadFromStorage<string>(LS_MODEL, 'gemini-2.5-flash'),
 
   // Restore model cache from localStorage (survives page reload, not app restart)
   modelCache: loadFromStorage<Partial<Record<AiProvider, ModelCache>>>(LS_MODEL_CACHE, {}),

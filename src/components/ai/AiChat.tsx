@@ -11,9 +11,9 @@ import { StreamingText } from './StreamingText'
 import type { AiMessage } from '../../types/ai.types'
 
 const DEFAULT_MODELS: Record<AiProvider, ModelEntry[]> = {
-  gemini: [{ id: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' }],
-  anthropic: [{ id: 'claude-sonnet-4-5', label: 'Claude Sonnet 4.5' }],
-  openai: [{ id: 'gpt-4o', label: 'GPT-4o' }],
+  gemini:    [{ id: 'gemini-2.5-flash',  label: 'Gemini 2.5 Flash' }],
+  anthropic: [{ id: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6' }],
+  openai:    [{ id: 'gpt-4.1',           label: 'GPT-4.1' }],
 }
 
 export function AiChat() {
