@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
-import { Send } from 'lucide-react'
+import { Send, KeyRound } from 'lucide-react'
 import { useAiStream } from '../../hooks/useAiStream'
 import { useAiStore, type AiProvider, type ModelEntry } from '../../store/aiStore'
 import { useLangStore } from '../../store/langStore'
 import { ipc } from '../../lib/ipc'
+import { isElectron } from '../../lib/platform'
+import { getWebKey, setWebKey, hasWebKey } from '../../lib/web-keys'
 import { SYSTEM_PROMPTS } from '../../lib/prompt-templates'
 import { StreamingText } from './StreamingText'
 import type { AiMessage } from '../../types/ai.types'
@@ -18,6 +20,8 @@ export function AiChat() {
   const [input, setInput] = useState('')
   const [loadingModels, setLoadingModels] = useState(false)
   const [testingModels, setTestingModels] = useState(false)
+  const [webKeyDraft, setWebKeyDraft] = useState('')
+  const [showKeyInput, setShowKeyInput] = useState(false)
   const { stream, getContext } = useAiStream()
   const {
     chatHistory, addMessage, isStreaming, currentStreamContent, clearChatHistory,
@@ -27,6 +31,10 @@ export function AiChat() {
   const { t } = useLangStore()
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Web : recalculer si la clé est présente (re-render forcé via state)
+  const [webKeyVersion, setWebKeyVersion] = useState(0)
+  const webKeyMissing = !isElectron && !hasWebKey(aiProvider)
 
   // Derive models + status from store cache
   const cache = getModelCache(aiProvider)
@@ -164,6 +172,59 @@ export function AiChat() {
           >
             {t('clearChat')}
           </button>
+        </div>
+      )}
+
+      {/* Bandeau clé API manquante (web uniquement) */}
+      {webKeyMissing && (
+        <div style={{
+          margin: '0 12px 8px',
+          padding: '10px 12px',
+          background: 'var(--color-warning)18',
+          border: '1px solid var(--color-warning)44',
+          borderRadius: '8px',
+          fontSize: '12px',
+          color: 'var(--color-text-muted)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: showKeyInput ? '8px' : 0 }}>
+            <KeyRound size={13} style={{ color: 'var(--color-warning)', flexShrink: 0 }} />
+            <span>
+              Clé API <strong style={{ color: 'var(--color-text)' }}>{aiProvider}</strong> requise.{' '}
+              <button
+                onClick={() => { setShowKeyInput(v => !v); setWebKeyDraft(getWebKey(aiProvider)) }}
+                style={{ background: 'none', border: 'none', color: 'var(--color-accent)', cursor: 'pointer', fontSize: '12px', fontWeight: 600, padding: 0 }}
+              >
+                {showKeyInput ? 'Annuler' : 'Configurer →'}
+              </button>
+            </span>
+          </div>
+          {showKeyInput && (
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <input
+                type="password"
+                value={webKeyDraft}
+                onChange={(e) => setWebKeyDraft(e.target.value)}
+                placeholder={`Colle ta clé ${aiProvider} ici…`}
+                autoFocus
+                style={{
+                  flex: 1, padding: '5px 8px',
+                  background: 'var(--color-surface)', border: '1px solid var(--color-border)',
+                  borderRadius: '6px', color: 'var(--color-text)', fontSize: '12px', outline: 'none',
+                }}
+              />
+              <button
+                onClick={() => { setWebKey(aiProvider, webKeyDraft); setShowKeyInput(false); setWebKeyDraft(''); setWebKeyVersion(v => v + 1) }}
+                disabled={!webKeyDraft.trim()}
+                style={{
+                  padding: '5px 10px', background: 'var(--color-accent)', border: 'none',
+                  borderRadius: '6px', color: '#0d0d0d', fontSize: '12px', fontWeight: 600,
+                  cursor: webKeyDraft.trim() ? 'pointer' : 'not-allowed', opacity: webKeyDraft.trim() ? 1 : 0.5,
+                }}
+              >
+                Sauver
+              </button>
+            </div>
+          )}
         </div>
       )}
 

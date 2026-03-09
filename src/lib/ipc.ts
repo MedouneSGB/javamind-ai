@@ -1,6 +1,26 @@
 import type { AiStreamPayload } from '../types/ai.types'
 import { isElectron } from './platform'
 
+// Modèles disponibles sur web (liste statique — pas d'appel API nécessaire)
+const WEB_MODELS = {
+  gemini: [
+    { id: 'gemini-2.0-flash',      label: 'Gemini 2.0 Flash' },
+    { id: 'gemini-2.0-flash-lite', label: 'Gemini 2.0 Flash Lite' },
+    { id: 'gemini-1.5-pro',        label: 'Gemini 1.5 Pro' },
+    { id: 'gemini-1.5-flash',      label: 'Gemini 1.5 Flash' },
+  ],
+  anthropic: [
+    { id: 'claude-opus-4-6',           label: 'Claude Opus 4.6' },
+    { id: 'claude-sonnet-4-6',         label: 'Claude Sonnet 4.6' },
+    { id: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5' },
+  ],
+  openai: [
+    { id: 'gpt-4o',      label: 'GPT-4o' },
+    { id: 'gpt-4o-mini', label: 'GPT-4o mini' },
+    { id: 'o3-mini',     label: 'o3 mini' },
+  ],
+} as const
+
 // Helpers
 function invoke(channel: string, ...args: unknown[]): Promise<unknown> {
   if (!isElectron) return Promise.reject(new Error(`web:not-available:${channel}`))
@@ -72,7 +92,7 @@ export const ipc = {
     getModels: (provider: 'anthropic' | 'gemini' | 'openai'): Promise<{ id: string; label: string }[]> =>
       isElectron
         ? invoke('ai:getModels', provider) as Promise<{ id: string; label: string }[]>
-        : Promise.resolve([]),
+        : Promise.resolve([...(WEB_MODELS[provider] ?? [])]),
     testModels: (provider: 'anthropic' | 'gemini' | 'openai', models: string[]): Promise<Record<string, boolean>> =>
       isElectron
         ? invoke('ai:testModels', { provider, models }) as Promise<Record<string, boolean>>
@@ -80,7 +100,7 @@ export const ipc = {
     getProviders: (): Promise<{ anthropic: boolean; gemini: boolean; openai: boolean }> =>
       isElectron
         ? invoke('ai:getProviders') as Promise<{ anthropic: boolean; gemini: boolean; openai: boolean }>
-        : Promise.resolve({ anthropic: false, gemini: false, openai: false }),
+        : Promise.resolve({ anthropic: true, gemini: true, openai: true }),
   },
 
   settings: {
