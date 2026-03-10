@@ -45,9 +45,11 @@ export const useAuthStore = create<AuthStore>()(
       signInWithGitHub: async () => {
         if (!supabase) return
         if (!isElectron) {
+          // Persist current path so we can restore it after OAuth redirect
+          sessionStorage.setItem('auth_redirect_from', window.location.pathname)
           await supabase.auth.signInWithOAuth({
             provider: 'github',
-            options: { redirectTo: window.location.origin },
+            options: { redirectTo: `${window.location.origin}/auth/callback` },
           })
           return
         }
@@ -62,9 +64,11 @@ export const useAuthStore = create<AuthStore>()(
       signInWithGoogle: async () => {
         if (!supabase) return
         if (!isElectron) {
+          // Persist current path so we can restore it after OAuth redirect
+          sessionStorage.setItem('auth_redirect_from', window.location.pathname)
           await supabase.auth.signInWithOAuth({
             provider: 'google',
-            options: { redirectTo: window.location.origin },
+            options: { redirectTo: `${window.location.origin}/auth/callback` },
           })
           return
         }

@@ -32,7 +32,8 @@ if (!gotLock) {
 
 function createWindow(): void {
   // Icône de la fenêtre (barre des tâches + alt-tab)
-  const iconPath = path.join(__dirname, '../public/logo.png')
+  // __dirname = electron/dist/ → remonter 2 niveaux pour atteindre public/
+  const iconPath = path.join(__dirname, '../../public/logo.png')
 
   mainWindow = new BrowserWindow({
     width: 1400,
@@ -66,12 +67,18 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   createWindow()
-  if (process.env.ELECTRON_DEV) {
-    globalShortcut.register('CommandOrControl+R', () => {
-      mainWindow?.webContents.reload()
-    })
-    globalShortcut.register('F5', () => {
-      mainWindow?.webContents.reload()
+  // Bloquer Ctrl+R et F5 au niveau clavier pour éviter les rechargements accidentels
+  // (ex: l'utilisateur tape dans un input et appuie sur Ctrl+R)
+  // Le bouton "Reload" dans la TitleBar appelle window.location.reload() directement
+  // et continue de fonctionner normalement via le renderer.
+  if (mainWindow) {
+    mainWindow.webContents.on('before-input-event', (_event, input) => {
+      const isReload =
+        (input.control || input.meta) && input.key.toLowerCase() === 'r' && !input.shift
+      const isF5 = input.key === 'F5'
+      if ((isReload || isF5) && !input.isAutoRepeat) {
+        _event.preventDefault()
+      }
     })
   }
 
@@ -363,12 +370,23 @@ function parseJavacErrors(stderr: string): JavaError[] {
 // ─────────────────────────────────────────────────────────
 // AI IPC — Multi-provider streaming (Anthropic + Gemini)
 // ─────────────────────────────────────────────────────────
+let currentStreamController: AbortController | null = null
+
+ipcMain.handle('ai:abort', () => {
+  currentStreamController?.abort()
+  currentStreamController = null
+})
+
 ipcMain.handle('ai:stream', async (event, payload: {
   systemPrompt: string
   messages: Array<{ role: 'user' | 'assistant'; content: string }>
   model?: string
   provider?: 'anthropic' | 'gemini' | 'openai'
 }) => {
+  currentStreamController?.abort()
+  currentStreamController = new AbortController()
+  const { signal } = currentStreamController
+
   const provider = payload.provider || 'anthropic'
 
   if (provider === 'gemini') {
@@ -393,11 +411,12 @@ ipcMain.handle('ai:stream', async (event, payload: {
       const chat = geminiModel.startChat({ history })
       const result = await chat.sendMessageStream(lastMessage.content)
       for await (const chunk of result.stream) {
+        if (signal.aborted) break
         const text = chunk.text()
         if (text) event.sender.send('ai:stream-chunk', text)
       }
     } catch (err: any) {
-      event.sender.send('ai:stream-error', err.message || 'Gemini request failed')
+      if (!signal.aborted) event.sender.send('ai:stream-error', err.message || 'Gemini request failed')
     }
   } else if (provider === 'openai') {
     const apiKey = process.env.OPENAI_API_KEY
@@ -431,13 +450,15 @@ ipcMain.handle('ai:stream', async (event, payload: {
       } else {
         requestParams.max_tokens = 4096
       }
+      requestParams.signal = signal
       const stream = await client.chat.completions.create(requestParams)
       for await (const chunk of stream) {
+        if (signal.aborted) break
         const text = chunk.choices[0]?.delta?.content
         if (text) event.sender.send('ai:stream-chunk', text)
       }
     } catch (err: any) {
-      event.sender.send('ai:stream-error', err.message || 'OpenAI request failed')
+      if (!signal.aborted) event.sender.send('ai:stream-error', err.message || 'OpenAI request failed')
     }
   } else {
     // Anthropic
@@ -455,17 +476,19 @@ ipcMain.handle('ai:stream', async (event, payload: {
         max_tokens: 4096,
         system: payload.systemPrompt,
         messages: payload.messages,
-      })
+      }, { signal })
       for await (const chunk of stream) {
+        if (signal.aborted) break
         if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
           event.sender.send('ai:stream-chunk', chunk.delta.text)
         }
       }
     } catch (err: any) {
-      event.sender.send('ai:stream-error', err.message || 'Anthropic request failed')
+      if (!signal.aborted) event.sender.send('ai:stream-error', err.message || 'Anthropic request failed')
     }
   }
 
+  currentStreamController = null
   event.sender.send('ai:stream-done')
 })
 
@@ -555,7 +578,7 @@ ipcMain.handle('ai:getModels', async (_, provider: 'anthropic' | 'gemini' | 'ope
           }
           return rank(a.id) - rank(b.id) || a.id.localeCompare(b.id)
         })
-    } else {
+    } else if (provider === 'anthropic') {
       // Anthropic: fetch models via API (works with valid key, no credits needed)
       const apiKey = process.env.ANTHROPIC_API_KEY
       if (!apiKey) return []
@@ -646,7 +669,7 @@ ipcMain.handle('ai:testModels', async (_, payload: { provider: 'anthropic' | 'ge
           req.end()
         })
         return ok
-      } else {
+      } else if (provider === 'anthropic') {
         // Anthropic
         const apiKey = process.env.ANTHROPIC_API_KEY
         if (!apiKey) return false
@@ -673,6 +696,7 @@ ipcMain.handle('ai:testModels', async (_, payload: { provider: 'anthropic' | 'ge
         })
         return ok
       }
+      return false
     } catch {
       return false
     }

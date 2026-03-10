@@ -1,6 +1,13 @@
 import type { AiStreamPayload } from '../types/ai.types'
 import { isElectron } from './platform'
 
+// Modèles disponibles sur web (liste statique — pas d'appel API nécessaire)
+const WEB_MODELS = {
+  gemini:    [{ id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' }],
+  anthropic: [{ id: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6' }],
+  openai:    [{ id: 'gpt-4.1', label: 'GPT-4.1' }],
+} as const
+
 // Helpers
 function invoke(channel: string, ...args: unknown[]): Promise<unknown> {
   if (!isElectron) return Promise.reject(new Error(`web:not-available:${channel}`))
@@ -72,7 +79,7 @@ export const ipc = {
     getModels: (provider: 'anthropic' | 'gemini' | 'openai'): Promise<{ id: string; label: string }[]> =>
       isElectron
         ? invoke('ai:getModels', provider) as Promise<{ id: string; label: string }[]>
-        : Promise.resolve([]),
+        : Promise.resolve([...(WEB_MODELS[provider] ?? [])]),
     testModels: (provider: 'anthropic' | 'gemini' | 'openai', models: string[]): Promise<Record<string, boolean>> =>
       isElectron
         ? invoke('ai:testModels', { provider, models }) as Promise<Record<string, boolean>>
@@ -80,7 +87,8 @@ export const ipc = {
     getProviders: (): Promise<{ anthropic: boolean; gemini: boolean; openai: boolean }> =>
       isElectron
         ? invoke('ai:getProviders') as Promise<{ anthropic: boolean; gemini: boolean; openai: boolean }>
-        : Promise.resolve({ anthropic: false, gemini: false, openai: false }),
+        : Promise.resolve({ anthropic: true, gemini: true, openai: true }),
+    abort: (): void => { if (isElectron) invoke('ai:abort').catch(() => {}) },
   },
 
   settings: {
