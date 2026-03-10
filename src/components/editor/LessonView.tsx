@@ -8,7 +8,7 @@ import type { LessonSection } from '../../lib/lesson-content'
 
 export function LessonView({ lessonId }: { lessonId: string }) {
   const lesson = getLessonContent(lessonId)
-  const { lang, t } = useLangStore()
+  const { lang } = useLangStore()
   const { openChallenge } = useEditorStore()
   const { setMode, setPanelOpen } = useAiStore()
   const { setCurrentTopic } = useLearningStore()

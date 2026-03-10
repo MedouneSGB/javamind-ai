@@ -42,7 +42,7 @@ export function RubberDuck() {
       id: crypto.randomUUID(), role: 'assistant', content: response,
       timestamp: Date.now(), mode: 'duck',
     }
-    setMessages(prev => [...prev, aiMsg])
+    setMessages([userMsg, aiMsg])
     setInput('')
   }
 
@@ -69,7 +69,7 @@ export function RubberDuck() {
       id: crypto.randomUUID(), role: 'assistant', content: response,
       timestamp: Date.now(), mode: 'duck',
     }
-    setMessages(prev => [...prev, aiMsg])
+    setMessages([...newMessages, aiMsg])
   }
 
   if (!isActive) {

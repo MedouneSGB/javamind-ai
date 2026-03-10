@@ -51,7 +51,7 @@ async function collectFiles(
   return result
 }
 
-export const useCloudProjectStore = create<CloudProjectStore>()((set, get) => ({
+export const useCloudProjectStore = create<CloudProjectStore>()((set) => ({
   projects: [],
   isLoading: false,
   isSaving: false,

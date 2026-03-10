@@ -12,6 +12,7 @@ export interface WebStreamPayload {
   systemPrompt: string
   messages: { role: string; content: string }[]
   apiKey: string
+  signal?: AbortSignal
 }
 
 export interface WebStreamCallbacks {
@@ -29,9 +30,11 @@ export async function streamWeb(
   try {
     if (payload.provider === 'gemini')         await streamGemini(payload, callbacks)
     else if (payload.provider === 'anthropic') await streamAnthropic(payload, callbacks)
+    else if (payload.provider === 'ollama')    await streamOllama(payload, callbacks)
     else                                       await streamOpenAI(payload, callbacks)
-    callbacks.onDone()
+    if (!payload.signal?.aborted) callbacks.onDone()
   } catch (err: unknown) {
+    if (payload.signal?.aborted) { callbacks.onDone(); return }
     const msg = err instanceof Error ? err.message : String(err)
     callbacks.onError(msg)
     callbacks.onDone()
@@ -41,7 +44,7 @@ export async function streamWeb(
 // ── Gemini ────────────────────────────────────────────────────────────────────
 
 async function streamGemini(
-  { apiKey, model, systemPrompt, messages }: WebStreamPayload,
+  { apiKey, model, systemPrompt, messages, signal }: WebStreamPayload,
   { onChunk }: WebStreamCallbacks,
 ): Promise<void> {
   const { GoogleGenerativeAI } = await import('@google/generative-ai')
@@ -62,6 +65,7 @@ async function streamGemini(
   const result = await chat.sendMessageStream(lastMsg?.content ?? '')
 
   for await (const chunk of result.stream) {
+    if (signal?.aborted) break
     const text = chunk.text()
     if (text) onChunk(text)
   }
@@ -70,7 +74,7 @@ async function streamGemini(
 // ── Anthropic ─────────────────────────────────────────────────────────────────
 
 async function streamAnthropic(
-  { apiKey, model, systemPrompt, messages }: WebStreamPayload,
+  { apiKey, model, systemPrompt, messages, signal }: WebStreamPayload,
   { onChunk }: WebStreamCallbacks,
 ): Promise<void> {
   const Anthropic = (await import('@anthropic-ai/sdk')).default
@@ -84,7 +88,7 @@ async function streamAnthropic(
       role: m.role as 'user' | 'assistant',
       content: m.content,
     })),
-  })
+  }, { signal })
 
   for await (const event of stream) {
     if (
@@ -99,7 +103,7 @@ async function streamAnthropic(
 // ── OpenAI ────────────────────────────────────────────────────────────────────
 
 async function streamOpenAI(
-  { apiKey, model, systemPrompt, messages }: WebStreamPayload,
+  { apiKey, model, systemPrompt, messages, signal }: WebStreamPayload,
   { onChunk }: WebStreamCallbacks,
 ): Promise<void> {
   const OpenAI = (await import('openai')).default
@@ -115,10 +119,55 @@ async function streamOpenAI(
         content: m.content,
       })),
     ],
-  })
+  }, { signal })
 
   for await (const chunk of stream) {
     const text = chunk.choices[0]?.delta?.content ?? ''
     if (text) onChunk(text)
+  }
+}
+
+// ── Ollama (API native /api/chat) ─────────────────────────────────────────────
+// apiKey = URL de base du serveur (ex: https://monserveur.run.app)
+
+async function streamOllama(
+  { apiKey: serverUrl, model, systemPrompt, messages, signal }: WebStreamPayload,
+  { onChunk }: WebStreamCallbacks,
+): Promise<void> {
+  const base = serverUrl.replace(/\/+$/, '')
+  const res = await fetch(`${base}/api/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    signal,
+    body: JSON.stringify({
+      model,
+      stream: true,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        ...messages.map(m => ({ role: m.role, content: m.content })),
+      ],
+    }),
+  })
+
+  if (!res.ok) throw new Error(`Ollama ${res.status}: ${await res.text()}`)
+
+  const reader = res.body!.getReader()
+  const decoder = new TextDecoder()
+  let buf = ''
+
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    buf += decoder.decode(value, { stream: true })
+    const lines = buf.split('\n')
+    buf = lines.pop() ?? ''
+    for (const line of lines) {
+      if (!line.trim()) continue
+      try {
+        const obj = JSON.parse(line)
+        const text = obj?.message?.content ?? ''
+        if (text) onChunk(text)
+      } catch { /* ignore malformed lines */ }
+    }
   }
 }

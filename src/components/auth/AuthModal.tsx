@@ -8,9 +8,10 @@ import { useAiStore } from '../../store/aiStore'
 import { supabase } from '../../lib/supabase'
 import { isElectron } from '../../lib/platform'
 import { pushToSupabase } from '../../lib/sync'
-import { Github, Chrome, LogOut, Loader2, X, CloudOff, AlertCircle, UserCircle2 } from 'lucide-react'
+import { Github, Chrome, LogOut, Loader2, X, CloudOff, AlertCircle, UserCircle2, LayoutDashboard } from 'lucide-react'
 import { useLangStore } from '../../store/langStore'
 import { ipc } from '../../lib/ipc'
+import { isAdminUser } from '../../lib/admin'
 
 
 export function AuthModal() {
@@ -59,6 +60,7 @@ export function AuthModal() {
               user={user}
               profile={profile}
               isSyncing={isSyncing}
+              isAdmin={!isElectron && isAdminUser(user?.email)}
               onSignOut={async () => {
                 await signOut()
                 useEditorStore.getState().reset()
@@ -69,6 +71,10 @@ export function AuthModal() {
                 setAuthModalOpen(false)
               }}
               onSyncNow={() => pushToSupabase()}
+              onAdminClick={() => {
+                setAuthModalOpen(false)
+                window.location.href = '/admin'
+              }}
               t={t}
             />
           : <LoginView t={t} />
@@ -184,9 +190,9 @@ function LoginView({ t }: { t: (k: string) => string }) {
   )
 }
 
-function ProfileView({ user, profile, isSyncing, onSignOut, onSyncNow, t }: {
-  user: any; profile: any; isSyncing: boolean
-  onSignOut: () => void; onSyncNow: () => void; t: (k: string) => string
+function ProfileView({ user, profile, isSyncing, isAdmin, onSignOut, onSyncNow, onAdminClick, t }: {
+  user: any; profile: any; isSyncing: boolean; isAdmin?: boolean
+  onSignOut: () => void; onSyncNow: () => void; onAdminClick?: () => void; t: (k: string) => string
 }) {
   const displayName = profile?.username || user?.user_metadata?.name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'
   const avatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url
@@ -235,6 +241,20 @@ function ProfileView({ user, profile, isSyncing, onSignOut, onSyncNow, t }: {
           {t('authSyncNow')}
         </button>
       </div>
+
+      {isAdmin && (
+        <button onClick={onAdminClick} style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+          height: '34px', background: 'transparent',
+          border: '1px solid var(--color-border)', borderRadius: '7px',
+          color: 'var(--color-accent)', fontSize: '12px', cursor: 'pointer', transition: 'all 0.1s',
+        }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-accent)'; e.currentTarget.style.background = 'rgba(212,165,116,0.08)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.background = 'transparent' }}
+        >
+          <LayoutDashboard size={12} /> Administration
+        </button>
+      )}
 
       <button onClick={onSignOut} style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',

@@ -88,6 +88,7 @@ export const ipc = {
       isElectron
         ? invoke('ai:getProviders') as Promise<{ anthropic: boolean; gemini: boolean; openai: boolean }>
         : Promise.resolve({ anthropic: true, gemini: true, openai: true }),
+    abort: (): void => { if (isElectron) invoke('ai:abort').catch(() => {}) },
   },
 
   settings: {

@@ -385,12 +385,12 @@ function FileNode({ node, depth, creating, onOpenFile, onStartCreate, onConfirmC
               <>
                 <IconBtn
                   title={t('deleteConfirm')}
-                  onClick={handleDeleteConfirm}
+                  onClick={() => handleDeleteConfirm({ stopPropagation: () => {} } as React.MouseEvent)}
                   danger
                 ><Check size={11}/></IconBtn>
                 <IconBtn
                   title={t('deleteCancel')}
-                  onClick={(e) => { (e as React.MouseEvent).stopPropagation(); setDeleteConfirm(false) }}
+                  onClick={() => { setDeleteConfirm(false) }}
                 ><X size={11}/></IconBtn>
               </>
             ) : (
@@ -411,7 +411,7 @@ function FileNode({ node, depth, creating, onOpenFile, onStartCreate, onConfirmC
                 {/* Delete button — always visible on hover */}
                 <IconBtn
                   title={t('deleteFile')}
-                  onClick={(e) => { (e as React.MouseEvent).stopPropagation(); setDeleteConfirm(true) }}
+                  onClick={() => { setDeleteConfirm(true) }}
                   danger
                 ><Trash2 size={11}/></IconBtn>
               </>

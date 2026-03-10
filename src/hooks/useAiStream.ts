@@ -5,6 +5,7 @@ import { useEditorStore } from '../store/editorStore'
 import { useLearningStore } from '../store/learningStore'
 import { isElectron } from '../lib/platform'
 import type { AiStreamPayload } from '../types/ai.types'
+import type { AiProvider } from '../store/aiStore'
 
 export function useAiStream() {
   const { startStream, appendStreamChunk, endStream, aiModel, aiProvider } = useAiStore()
@@ -13,12 +14,21 @@ export function useAiStream() {
   const unsubChunk = useRef<(() => void) | null>(null)
   const unsubDone = useRef<(() => void) | null>(null)
   const unsubError = useRef<(() => void) | null>(null)
+  const abortRef = useRef<AbortController | null>(null)
 
   const cleanup = useCallback(() => {
     unsubChunk.current?.()
     unsubDone.current?.()
     unsubError.current?.()
   }, [])
+
+  const abort = useCallback(() => {
+    abortRef.current?.abort()
+    abortRef.current = null
+    ipc.ai.abort()
+    endStream()
+    cleanup()
+  }, [endStream, cleanup])
 
   useEffect(() => () => cleanup(), [cleanup])
 
@@ -41,7 +51,7 @@ export function useAiStream() {
     cleanup()
     startStream()
 
-    const provider = (payload.provider || aiProvider) as 'gemini' | 'anthropic' | 'openai'
+    const provider = (payload.provider || aiProvider) as AiProvider
     const model = payload.model || aiModel
 
     // ── Web mode : appel direct aux SDKs IA depuis le browser ────────────────
@@ -56,10 +66,13 @@ export function useAiStream() {
         return `NO_API_KEY:${provider}`
       }
 
+      const controller = new AbortController()
+      abortRef.current = controller
+
       return new Promise((resolve) => {
         let buffer = ''
         streamWeb(
-          { provider, model, systemPrompt: payload.systemPrompt, messages: payload.messages, apiKey },
+          { provider, model, systemPrompt: payload.systemPrompt, messages: payload.messages, apiKey, signal: controller.signal },
           {
             onChunk: (text) => {
               buffer += text
@@ -67,6 +80,7 @@ export function useAiStream() {
               onChunk?.(text)
             },
             onDone: () => {
+              abortRef.current = null
               endStream()
               onDone?.(buffer)
               resolve(buffer)
@@ -74,6 +88,7 @@ export function useAiStream() {
             onError: (err) => {
               appendStreamChunk(`\n⚠️ ${err}`)
               buffer += `\n⚠️ ${err}`
+              abortRef.current = null
               endStream()
               resolve(buffer)
             },
@@ -111,9 +126,9 @@ export function useAiStream() {
         resolve(buffer)
       })
 
-      ipc.ai.stream({ ...payload, model, provider })
+      ipc.ai.stream({ ...payload, model, provider: provider as 'anthropic' | 'gemini' | 'openai' })
     })
   }, [cleanup, startStream, appendStreamChunk, endStream, aiModel, aiProvider])
 
-  return { stream, getContext }
+  return { stream, abort, getContext }
 }

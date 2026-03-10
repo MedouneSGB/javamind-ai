@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type { AiMode, AiMessage, Challenge, InterviewSession } from '../types/ai.types'
 
-export type AiProvider = 'anthropic' | 'gemini' | 'openai'
+export type AiProvider = 'anthropic' | 'gemini' | 'openai' | 'ollama'
 
 export interface ModelEntry {
   id: string

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Send, KeyRound } from 'lucide-react'
+import { Send, KeyRound, Square } from 'lucide-react'
 import { useAiStream } from '../../hooks/useAiStream'
 import { useAiStore, type AiProvider, type ModelEntry } from '../../store/aiStore'
 import { useLangStore } from '../../store/langStore'
@@ -11,9 +11,10 @@ import { StreamingText } from './StreamingText'
 import type { AiMessage } from '../../types/ai.types'
 
 const DEFAULT_MODELS: Record<AiProvider, ModelEntry[]> = {
-  gemini:    [{ id: 'gemini-2.5-flash',  label: 'Gemini 2.5 Flash' }],
-  anthropic: [{ id: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6' }],
-  openai:    [{ id: 'gpt-4.1',           label: 'GPT-4.1' }],
+  gemini:    [{ id: 'gemini-2.5-flash',    label: 'Gemini 2.5 Flash' }],
+  anthropic: [{ id: 'claude-sonnet-4-6',   label: 'Claude Sonnet 4.6' }],
+  openai:    [{ id: 'gpt-4.1',             label: 'GPT-4.1' }],
+  ollama:    [{ id: 'qwen2.5-coder:1.5b',  label: 'Qwen2.5 Coder 1.5B' }],
 }
 
 export function AiChat() {
@@ -22,7 +23,7 @@ export function AiChat() {
   const [testingModels, setTestingModels] = useState(false)
   const [webKeyDraft, setWebKeyDraft] = useState('')
   const [showKeyInput, setShowKeyInput] = useState(false)
-  const { stream, getContext } = useAiStream()
+  const { stream, abort, getContext } = useAiStream()
   const {
     chatHistory, addMessage, isStreaming, currentStreamContent, clearChatHistory,
     aiProvider, setAiProvider, aiModel, setAiModel,
@@ -32,8 +33,7 @@ export function AiChat() {
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  // Web : recalculer si la clé est présente (re-render forcé via state)
-  const [webKeyVersion, setWebKeyVersion] = useState(0)
+  // Web : check if API key/URL is present
   const webKeyMissing = !isElectron && !hasWebKey(aiProvider)
 
   // Derive models + status from store cache
@@ -55,9 +55,14 @@ export function AiChat() {
       return
     }
 
-    // Cache is stale or missing — fetch from API
+    // Cache is stale or missing — fetch from API (skip for ollama, which uses web-only URLs)
+    if (aiProvider === 'ollama') {
+      setModelCache(aiProvider, DEFAULT_MODELS[aiProvider])
+      return
+    }
+
     setLoadingModels(true)
-    ipc.ai.getModels(aiProvider).then((result) => {
+    ipc.ai.getModels(aiProvider as 'anthropic' | 'gemini' | 'openai').then((result) => {
       const list = result && result.length > 0 ? result : DEFAULT_MODELS[aiProvider]
       setModelCache(aiProvider, list) // marks all as null (pending)
 
@@ -69,7 +74,7 @@ export function AiChat() {
 
       // Silently test all models in parallel
       setTestingModels(true)
-      ipc.ai.testModels(aiProvider, list.map(m => m.id)).then((results) => {
+      ipc.ai.testModels(aiProvider as 'anthropic' | 'gemini' | 'openai', list.map(m => m.id)).then((results) => {
         updateModelStatus(aiProvider, results)
         setTestingModels(false)
         // Auto-switch if current model is unavailable
@@ -175,7 +180,7 @@ export function AiChat() {
         </div>
       )}
 
-      {/* Bandeau clé API manquante (web uniquement) */}
+      {/* Bandeau clé API / URL manquante (web uniquement) */}
       {webKeyMissing && (
         <div style={{
           margin: '0 12px 8px',
@@ -189,7 +194,8 @@ export function AiChat() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: showKeyInput ? '8px' : 0 }}>
             <KeyRound size={13} style={{ color: 'var(--color-warning)', flexShrink: 0 }} />
             <span>
-              Clé API <strong style={{ color: 'var(--color-text)' }}>{aiProvider}</strong> requise.{' '}
+              {aiProvider === 'ollama' ? 'URL du serveur' : 'Clé API'}{' '}
+              <strong style={{ color: 'var(--color-text)' }}>{aiProvider}</strong> requise.{' '}
               <button
                 onClick={() => { setShowKeyInput(v => !v); setWebKeyDraft(getWebKey(aiProvider)) }}
                 style={{ background: 'none', border: 'none', color: 'var(--color-accent)', cursor: 'pointer', fontSize: '12px', fontWeight: 600, padding: 0 }}
@@ -201,10 +207,12 @@ export function AiChat() {
           {showKeyInput && (
             <div style={{ display: 'flex', gap: '6px' }}>
               <input
-                type="password"
+                type={aiProvider === 'ollama' ? 'text' : 'password'}
                 value={webKeyDraft}
                 onChange={(e) => setWebKeyDraft(e.target.value)}
-                placeholder={`Colle ta clé ${aiProvider} ici…`}
+                placeholder={aiProvider === 'ollama'
+                  ? 'https://localhost:11434 ou URL déployée…'
+                  : `Colle ta clé ${aiProvider} ici…`}
                 autoFocus
                 style={{
                   flex: 1, padding: '5px 8px',
@@ -213,7 +221,7 @@ export function AiChat() {
                 }}
               />
               <button
-                onClick={() => { setWebKey(aiProvider, webKeyDraft); setShowKeyInput(false); setWebKeyDraft(''); setWebKeyVersion(v => v + 1) }}
+                onClick={() => { setWebKey(aiProvider, webKeyDraft); setShowKeyInput(false); setWebKeyDraft('') }}
                 disabled={!webKeyDraft.trim()}
                 style={{
                   padding: '5px 10px', background: 'var(--color-accent)', border: 'none',
@@ -238,7 +246,7 @@ export function AiChat() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
           {/* Provider toggle */}
           <div style={{ display: 'flex', gap: '2px', background: 'var(--color-surface)', borderRadius: '6px', padding: '2px', flexShrink: 0 }}>
-            {(['anthropic', 'gemini', 'openai'] as AiProvider[]).map(p => (
+            {(['anthropic', 'gemini', 'openai', 'ollama'] as AiProvider[]).map(p => (
               <button
                 key={p}
                 onClick={() => setAiProvider(p)}
@@ -256,7 +264,7 @@ export function AiChat() {
                   whiteSpace: 'nowrap',
                 }}
               >
-                {p === 'anthropic' ? '◆ Claude' : p === 'gemini' ? '✦ Gemini' : '⬡ OpenAI'}
+                {p === 'anthropic' ? '◆ Claude' : p === 'gemini' ? '✦ Gemini' : p === 'openai' ? '⬡ OpenAI' : '⚙ Ollama'}
               </button>
             ))}
           </div>
@@ -341,28 +349,52 @@ export function AiChat() {
               fontFamily: 'inherit',
             }}
           />
-          <button
-            onClick={handleSend}
-            disabled={!input.trim() || isStreaming}
-            style={{
-              width: '28px',
-              height: '28px',
-              background: input.trim() && !isStreaming ? 'var(--color-accent)' : 'var(--color-surface-2)',
-              border: 'none',
-              borderRadius: '6px',
-              color: input.trim() && !isStreaming ? '#0d0d0d' : 'var(--color-text-dim)',
-              cursor: input.trim() && !isStreaming ? 'pointer' : 'not-allowed',
-              fontSize: '14px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-              alignSelf: 'flex-end',
-              transition: 'all 0.15s',
-            }}
-          >
-            <Send size={13}/>
-          </button>
+          {isStreaming ? (
+            <button
+              onClick={abort}
+              title="Arrêter la génération"
+              style={{
+                width: '28px',
+                height: '28px',
+                background: 'var(--color-error)',
+                border: 'none',
+                borderRadius: '6px',
+                color: '#fff',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                alignSelf: 'flex-end',
+                transition: 'all 0.15s',
+              }}
+            >
+              <Square size={11} fill="currentColor" />
+            </button>
+          ) : (
+            <button
+              onClick={handleSend}
+              disabled={!input.trim()}
+              style={{
+                width: '28px',
+                height: '28px',
+                background: input.trim() ? 'var(--color-accent)' : 'var(--color-surface-2)',
+                border: 'none',
+                borderRadius: '6px',
+                color: input.trim() ? '#0d0d0d' : 'var(--color-text-dim)',
+                cursor: input.trim() ? 'pointer' : 'not-allowed',
+                fontSize: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                alignSelf: 'flex-end',
+                transition: 'all 0.15s',
+              }}
+            >
+              <Send size={13}/>
+            </button>
+          )}
         </div>
         <div style={{ fontSize: '10px', color: 'var(--color-text-dim)', marginTop: '4px', textAlign: 'center' }}>
           {t('contextAware')}
