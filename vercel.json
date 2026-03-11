@@ -3,7 +3,7 @@
   "outputDirectory": "dist/renderer",
   "rewrites": [
     {
-      "source": "/((?!assets/).*)",
+      "source": "/(?!assets|index\\.html)",
       "destination": "/index.html"
     }
   ]
