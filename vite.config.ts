@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => {
     'import.meta.env.VITE_OPENAI_API_KEY':    JSON.stringify(env.OPENAI_API_KEY ?? ''),
     'import.meta.env.VITE_OLLAMA_URL':        JSON.stringify(env.OLLAMA_URL ?? ''),
   },
-  base: './',
+  base: '/',
   build: {
     outDir: 'dist/renderer',
     emptyOutDir: true,
