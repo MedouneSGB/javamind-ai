@@ -1,4 +1,10 @@
 {
   "buildCommand": "npm run build:renderer",
-  "outputDirectory": "dist/renderer"
+  "outputDirectory": "dist/renderer",
+  "rewrites": [
+    {
+      "source": "/((?!assets/).*)",
+      "destination": "/index.html"
+    }
+  ]
 }
