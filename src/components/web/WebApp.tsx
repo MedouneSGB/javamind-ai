@@ -8,6 +8,13 @@ import { supabase } from '../../lib/supabase'
 
 type Page = 'landing' | 'login' | 'admin' | 'callback'
 
+function getPageFromPath(path: string): Page {
+  if (path === '/admin') return 'admin'
+  if (path === '/login') return 'login'
+  if (path === '/auth/callback') return 'callback'
+  return 'landing'
+}
+
 /**
  * Web-only router: Landing → Login → App (or /admin for admins)
  * Electron bypasses this entirely (see App.tsx).
@@ -21,14 +28,21 @@ type Page = 'landing' | 'login' | 'admin' | 'callback'
  */
 export function WebApp() {
   const { session, user, setSession, fetchProfile } = useAuthStore()
-  const [page, setPage] = useState<Page>(() => {
-    const path = window.location.pathname
-    if (path === '/admin') return 'admin'
-    if (path === '/auth/callback') return 'callback'
-    return 'landing'
-  })
+  const [page, setPage] = useState<Page>(() => getPageFromPath(window.location.pathname))
   // true while we verify the persisted session against Supabase
   const [checking, setChecking] = useState(true)
+
+  const navigateTo = (path: string, replace = false) => {
+    const method = replace ? 'replaceState' : 'pushState'
+    window.history[method]({}, '', path)
+    setPage(getPageFromPath(path))
+  }
+
+  useEffect(() => {
+    const handlePopState = () => setPage(getPageFromPath(window.location.pathname))
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
 
   // On mount: validate persisted session (avoids using stale localStorage session)
   useEffect(() => {
@@ -71,14 +85,12 @@ export function WebApp() {
       const from = sessionStorage.getItem('auth_redirect_from') || '/'
       sessionStorage.removeItem('auth_redirect_from')
       // Update browser URL without reload
-      window.history.replaceState({}, '', from)
-      const target: Page = from === '/admin' ? 'admin' : 'landing'
+      navigateTo(from, true)
+      const target = getPageFromPath(from)
       setPage(target)
       // Render immediately based on resolved target
       if (target === 'admin') {
-        if (isAdminUser(user?.email)) {
-          return <AdminPage onBack={() => { window.history.pushState({}, '', '/'); setPage('landing') }} />
-        }
+        if (isAdminUser(user?.email)) return <AdminPage onBack={() => navigateTo('/')} />
         return <AppShell />
       }
       return <AppShell />
@@ -91,10 +103,10 @@ export function WebApp() {
   if (page === 'admin') {
     if (!session) {
       // Not logged in → login first, will redirect back to admin after auth
-      return <LoginPage onBack={() => { window.history.pushState({}, '', '/'); setPage('landing') }} />
+      return <LoginPage onBack={() => navigateTo('/')} />
     }
     if (isAdminUser(user?.email)) {
-      return <AdminPage onBack={() => { window.history.pushState({}, '', '/'); setPage('landing') }} />
+      return <AdminPage onBack={() => navigateTo('/')} />
     }
     // Logged in but not admin → app
     return <AppShell />
@@ -102,8 +114,8 @@ export function WebApp() {
 
   // ── Standard routes ────────────────────────────────────────────────────────
   if (session) return <AppShell />
-  if (page === 'login') return <LoginPage onBack={() => setPage('landing')} />
-  return <LandingPage onGetStarted={() => setPage('login')} />
+  if (page === 'login') return <LoginPage onBack={() => navigateTo('/')} />
+  return <LandingPage onGetStarted={() => navigateTo('/login')} />
 }
 
 function Splash() {
