@@ -87,7 +87,6 @@ export function WebApp() {
       // Update browser URL without reload
       navigateTo(from, true)
       const target = getPageFromPath(from)
-      setPage(target)
       // Render immediately based on resolved target
       if (target === 'admin') {
         if (isAdminUser(user?.email)) return <AdminPage onBack={() => navigateTo('/')} />
