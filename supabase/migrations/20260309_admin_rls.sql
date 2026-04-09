@@ -65,7 +65,7 @@ BEGIN
       (u.raw_app_meta_data ->> 'provider')::text,
       COALESCE((u.raw_app_meta_data ->> 'is_admin')::boolean, false),
       p.created_at,
-      p.updated_at
+      u.updated_at
     FROM public.profiles p
     JOIN auth.users u ON u.id = p.id
     WHERE (
