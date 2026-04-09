@@ -66,6 +66,16 @@ export function WebApp() {
   // Supabase SDK automatically detects and exchanges the token/code in the URL.
   // Once done, session is set via onAuthStateChange → re-render handles routing.
   if (page === 'callback') {
+    // Detect OAuth error redirected back by Supabase (e.g. provider not enabled)
+    const params = new URLSearchParams(window.location.search)
+    const oauthError = params.get('error_description') || params.get('error')
+    if (oauthError) {
+      sessionStorage.setItem('auth_error', decodeURIComponent(oauthError))
+      window.history.replaceState({}, '', '/login')
+      setPage('login')
+      return <Splash />
+    }
+
     if (session) {
       // Restore pre-auth path (e.g. '/admin') saved before the OAuth redirect
       const from = sessionStorage.getItem('auth_redirect_from') || '/'

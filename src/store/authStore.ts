@@ -47,10 +47,11 @@ export const useAuthStore = create<AuthStore>()(
         if (!isElectron) {
           // Persist current path so we can restore it after OAuth redirect
           sessionStorage.setItem('auth_redirect_from', window.location.pathname)
-          await supabase.auth.signInWithOAuth({
+          const { error } = await supabase.auth.signInWithOAuth({
             provider: 'github',
             options: { redirectTo: `${window.location.origin}/auth/callback` },
           })
+          if (error) throw error
           return
         }
         const { data, error } = await supabase.auth.signInWithOAuth({
@@ -66,10 +67,11 @@ export const useAuthStore = create<AuthStore>()(
         if (!isElectron) {
           // Persist current path so we can restore it after OAuth redirect
           sessionStorage.setItem('auth_redirect_from', window.location.pathname)
-          await supabase.auth.signInWithOAuth({
+          const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: { redirectTo: `${window.location.origin}/auth/callback` },
           })
+          if (error) throw error
           return
         }
         const { data, error } = await supabase.auth.signInWithOAuth({
