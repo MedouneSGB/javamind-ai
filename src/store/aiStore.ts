@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type { AiMode, AiMessage, Challenge, InterviewSession } from '../types/ai.types'
 
-export type AiProvider = 'anthropic' | 'gemini' | 'openai' | 'ollama'
+export type AiProvider = 'gemini'
 
 export interface ModelEntry {
   id: string
@@ -67,6 +67,9 @@ interface AiStore {
   setAiModel: (model: string) => void
   setAiProvider: (provider: AiProvider) => void
   clearChatHistory: () => void
+  pendingChallengeGenerate: boolean
+  triggerChallengeGenerate: () => void
+  clearPendingChallengeGenerate: () => void
   // Bulk setter for Supabase sync
   setChatHistory: (history: AiMessage[]) => void
   setActiveMode: (mode: AiMode) => void
@@ -95,9 +98,10 @@ export const useAiStore = create<AiStore>()((set, get) => ({
   interviewSession: null,
   duckMessages: [],
   isDuckActive: false,
+  pendingChallengeGenerate: false,
 
   // Restore from localStorage
-  aiProvider: loadFromStorage<AiProvider>(LS_PROVIDER, 'gemini'),
+  aiProvider: 'gemini',
   aiModel: loadFromStorage<string>(LS_MODEL, 'gemini-2.5-flash'),
 
   // Restore model cache from localStorage (survives page reload, not app restart)
@@ -143,6 +147,9 @@ export const useAiStore = create<AiStore>()((set, get) => ({
     saveToStorage(LS_PROVIDER, provider)
     set({ aiProvider: provider })
   },
+
+  triggerChallengeGenerate: () => set({ pendingChallengeGenerate: true }),
+  clearPendingChallengeGenerate: () => set({ pendingChallengeGenerate: false }),
 
   clearChatHistory: () => set({ chatHistory: [] }),
   setChatHistory: (history) => set({ chatHistory: history }),

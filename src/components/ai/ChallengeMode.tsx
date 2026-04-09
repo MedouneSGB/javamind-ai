@@ -10,13 +10,23 @@ import type { Challenge, ChallengeResult } from '../../types/ai.types'
 
 export function ChallengeMode() {
   const { stream, getContext } = useAiStream()
-  const { isStreaming, currentStreamContent, currentChallenge, startChallenge, challengeStartTime } = useAiStore()
+  const { isStreaming, currentStreamContent, currentChallenge, startChallenge, challengeStartTime, pendingChallengeGenerate, clearPendingChallengeGenerate } = useAiStore()
   const { userLevel, currentTopic, masteredConcepts, recordChallengeResult, markConceptMastered } = useLearningStore()
   const { t } = useLangStore()
   const [hintsRevealed, setHintsRevealed] = useState(0)
   const [elapsed, setElapsed] = useState(0)
   const [phase, setPhase] = useState<'idle' | 'generating' | 'active' | 'evaluating' | 'result'>('idle')
   const [evalResult, setEvalResult] = useState('')
+
+  // Auto-generate when triggered from "Commencer le défi" button
+  useEffect(() => {
+    if (!pendingChallengeGenerate) return
+    clearPendingChallengeGenerate()
+    if (phase === 'idle' || phase === 'result') {
+      handleGenerate()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingChallengeGenerate])
 
   // Timer
   useEffect(() => {

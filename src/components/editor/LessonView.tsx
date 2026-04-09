@@ -10,7 +10,7 @@ export function LessonView({ lessonId }: { lessonId: string }) {
   const lesson = getLessonContent(lessonId)
   const { lang } = useLangStore()
   const { openChallenge } = useEditorStore()
-  const { setMode, setPanelOpen } = useAiStore()
+  const { setMode, setPanelOpen, triggerChallengeGenerate } = useAiStore()
   const { setCurrentTopic } = useLearningStore()
 
   if (!lesson) {
@@ -31,6 +31,7 @@ export function LessonView({ lessonId }: { lessonId: string }) {
     setCurrentTopic(lessonId)
     setMode('challenge')
     setPanelOpen(true)
+    triggerChallengeGenerate()
   }
 
   return (

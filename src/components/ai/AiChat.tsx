@@ -11,10 +11,7 @@ import { StreamingText } from './StreamingText'
 import type { AiMessage } from '../../types/ai.types'
 
 const DEFAULT_MODELS: Record<AiProvider, ModelEntry[]> = {
-  gemini:    [{ id: 'gemini-2.5-flash',    label: 'Gemini 2.5 Flash' }],
-  anthropic: [{ id: 'claude-sonnet-4-6',   label: 'Claude Sonnet 4.6' }],
-  openai:    [{ id: 'gpt-4.1',             label: 'GPT-4.1' }],
-  ollama:    [{ id: 'qwen2.5-coder:1.5b',  label: 'Qwen2.5 Coder 1.5B' }],
+  gemini: [{ id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' }],
 }
 
 export function AiChat() {
@@ -26,7 +23,7 @@ export function AiChat() {
   const { stream, abort, getContext } = useAiStream()
   const {
     chatHistory, addMessage, isStreaming, currentStreamContent, clearChatHistory,
-    aiProvider, setAiProvider, aiModel, setAiModel,
+    aiProvider, aiModel, setAiModel,
     getModelCache, setModelCache, updateModelStatus, isCacheValid,
   } = useAiStore()
   const { t } = useLangStore()
@@ -55,14 +52,9 @@ export function AiChat() {
       return
     }
 
-    // Cache is stale or missing — fetch from API (skip for ollama, which uses web-only URLs)
-    if (aiProvider === 'ollama') {
-      setModelCache(aiProvider, DEFAULT_MODELS[aiProvider])
-      return
-    }
-
+    // Cache is stale or missing — fetch from API
     setLoadingModels(true)
-    ipc.ai.getModels(aiProvider as 'anthropic' | 'gemini' | 'openai').then((result) => {
+    ipc.ai.getModels(aiProvider).then((result) => {
       const list = result && result.length > 0 ? result : DEFAULT_MODELS[aiProvider]
       setModelCache(aiProvider, list) // marks all as null (pending)
 
@@ -74,7 +66,7 @@ export function AiChat() {
 
       // Silently test all models in parallel
       setTestingModels(true)
-      ipc.ai.testModels(aiProvider as 'anthropic' | 'gemini' | 'openai', list.map(m => m.id)).then((results) => {
+      ipc.ai.testModels(aiProvider, list.map(m => m.id)).then((results) => {
         updateModelStatus(aiProvider, results)
         setTestingModels(false)
         // Auto-switch if current model is unavailable
@@ -194,7 +186,7 @@ export function AiChat() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: showKeyInput ? '8px' : 0 }}>
             <KeyRound size={13} style={{ color: 'var(--color-warning)', flexShrink: 0 }} />
             <span>
-              {aiProvider === 'ollama' ? 'URL du serveur' : 'Clé API'}{' '}
+              {'Clé API'}{' '}
               <strong style={{ color: 'var(--color-text)' }}>{aiProvider}</strong> requise.{' '}
               <button
                 onClick={() => { setShowKeyInput(v => !v); setWebKeyDraft(getWebKey(aiProvider)) }}
@@ -207,12 +199,10 @@ export function AiChat() {
           {showKeyInput && (
             <div style={{ display: 'flex', gap: '6px' }}>
               <input
-                type={aiProvider === 'ollama' ? 'text' : 'password'}
+                type="password"
                 value={webKeyDraft}
                 onChange={(e) => setWebKeyDraft(e.target.value)}
-                placeholder={aiProvider === 'ollama'
-                  ? 'https://localhost:11434 ou URL déployée…'
-                  : `Colle ta clé ${aiProvider} ici…`}
+                placeholder={`Colle ta clé ${aiProvider} ici…`}
                 autoFocus
                 style={{
                   flex: 1, padding: '5px 8px',
@@ -244,29 +234,18 @@ export function AiChat() {
       }}>
         {/* Provider + Model row */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-          {/* Provider toggle */}
-          <div style={{ display: 'flex', gap: '2px', background: 'var(--color-surface)', borderRadius: '6px', padding: '2px', flexShrink: 0 }}>
-            {(['anthropic', 'gemini', 'openai', 'ollama'] as AiProvider[]).map(p => (
-              <button
-                key={p}
-                onClick={() => setAiProvider(p)}
-                disabled={isStreaming}
-                style={{
-                  padding: '2px 7px',
-                  borderRadius: '4px',
-                  border: 'none',
-                  fontSize: '10px',
-                  fontWeight: 600,
-                  cursor: isStreaming ? 'not-allowed' : 'pointer',
-                  background: aiProvider === p ? 'var(--color-accent)' : 'transparent',
-                  color: aiProvider === p ? '#0d0d0d' : 'var(--color-text-dim)',
-                  transition: 'all 0.15s',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {p === 'anthropic' ? '◆ Claude' : p === 'gemini' ? '✦ Gemini' : p === 'openai' ? '⬡ OpenAI' : '⚙ Ollama'}
-              </button>
-            ))}
+          {/* Provider label */}
+          <div style={{
+            padding: '2px 9px',
+            background: 'var(--color-accent)',
+            borderRadius: '6px',
+            fontSize: '10px',
+            fontWeight: 600,
+            color: '#0d0d0d',
+            flexShrink: 0,
+            whiteSpace: 'nowrap',
+          }}>
+            ✦ Gemini Flash
           </div>
           {/* Model select */}
           <select

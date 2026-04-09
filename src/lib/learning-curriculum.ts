@@ -188,14 +188,6 @@ export function getConceptById(conceptId: string) {
   return null
 }
 
-export function getAvailableConcepts(masteredIds: string[]): string[] {
-  const available: string[] = []
-  for (const track of CURRICULUM.tracks) {
-    for (const concept of track.concepts) {
-      if (masteredIds.includes(concept.id)) continue
-      const prereqsMet = concept.prerequisite.every(p => masteredIds.includes(p))
-      if (prereqsMet) available.push(concept.id)
-    }
-  }
-  return available
+export function getAvailableConcepts(_masteredIds: string[]): string[] {
+  return CURRICULUM.tracks.flatMap(track => track.concepts.map(c => c.id))
 }
