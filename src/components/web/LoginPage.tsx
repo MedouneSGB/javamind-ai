@@ -13,7 +13,11 @@ export function LoginPage({ onBack }: LoginPageProps) {
   const { theme, toggleTheme } = useThemeStore()
   const isDark = theme === 'dark'
   const [loading, setLoading] = useState<'github' | 'google' | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(() => {
+    const e = sessionStorage.getItem('auth_error')
+    if (e) sessionStorage.removeItem('auth_error')
+    return e
+  })
 
   const handleGitHub = async () => {
     setLoading('github')
@@ -120,7 +124,7 @@ export function LoginPage({ onBack }: LoginPageProps) {
             color: 'var(--color-text-muted)',
             textAlign: 'center',
           }}>
-            Connectez-vous dans la fenêtre qui s'est ouverte…
+            Redirection en cours…
           </p>
         )}
 
